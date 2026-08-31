@@ -1,0 +1,41 @@
+[
+  {
+    "id": "roman-crema-marfil-60x60",
+    "brand": "Roman",
+    "name": "Crema Marfil Polished",
+    "size_cm": { "width": 60, "height": 60 },
+    "category": "floor",
+    "pieces_per_dus": 4,
+    "coverage_per_dus_m2": 1.44,
+    "price_per_dus": 285000,
+    "thumbnail_url": "/thumbnails/roman-crema-marfil-60x60.jpg",
+    "texture_url": "/textures/roman-crema-marfil-60x60.webp",
+    "tags": ["cream", "polished", "marble-look", "premium"]
+  },
+  {
+    "id": "roman-onyx-beige-30x60",
+    "brand": "Roman",
+    "name": "Onyx Beige",
+    "size_cm": { "width": 30, "height": 60 },
+    "category": "wall",
+    "pieces_per_dus": 6,
+    "coverage_per_dus_m2": 1.08,
+    "price_per_dus": 195000,
+    "thumbnail_url": "/thumbnails/roman-onyx-beige-30x60.jpg",
+    "texture_url": "/textures/roman-onyx-beige-30x60.webp",
+    "tags": ["beige", "onyx-look", "wall", "medium"]
+  },
+  {
+    "id": "mulia-cotto-40x40",
+    "brand": "Mulia",
+    "name": "Cotto Terracotta",
+    "size_cm": { "width": 40, "height": 40 },
+    "category": "floor",
+    "pieces_per_dus": 6,
+    "coverage_per_dus_m2": 0.96,
+    "price_per_dus": 78000,
+    "thumbnail_url": "/thumbnails/mulia-cotto-40x40.jpg",
+    "texture_url": "/textures/mulia-cotto-40x40.webp",
+    "tags": ["red", "matt", "rustic", "budget"]
+  }
+]

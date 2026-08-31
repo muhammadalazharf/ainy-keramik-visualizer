@@ -1,0 +1,7 @@
+[
+  { "id": "white",  "name": "Putih",  "hex": "#F5F5F5" },
+  { "id": "cream",  "name": "Cream",  "hex": "#E8DDC8" },
+  { "id": "grey",   "name": "Abu",    "hex": "#9E9E9E" },
+  { "id": "brown",  "name": "Coklat", "hex": "#6D4C41" },
+  { "id": "black",  "name": "Hitam",  "hex": "#212121" }
+]
