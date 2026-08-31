@@ -2,75 +2,91 @@
 
 **Target Date:** Sunday berikutnya setelah 2026-08-31
 
-## Session Goal
+## Konteks: Progress Session 1 Melebihi Ekspektasi
 
-Selesaikan Phase 0 penuh dengan git commit + Vercel deploy, lalu mulai Phase 3 (skeleton screens navigasi).
+Session 1 sudah cover: Phase 0 foundation + Phase 3-4 skeleton screens + Zustand state + Konva basic canvas (rectangle + grid). Sudah initial commit lokal (`ae17e3e`).
 
-Target akhir sesi: **Ortu bisa akses URL Vercel dan navigasi 4 screen (walau kosong isi).**
+## Session 2 Goal
+
+**Deploy live + mulai implementasi tile pattern rendering.**
+
+Target akhir sesi: **Ortu bisa akses URL Vercel dari HP dan lihat area kanvas render dengan tile placeholder.**
 
 ## Preparation Before Session
 
-- [ ] Akun GitHub sudah login di browser
-- [ ] Akun Vercel siap (signup dengan GitHub — free tier cukup)
-- [ ] Share screenshot progress current ke ortu (manage expectation)
-- [ ] Sync OneDrive kalau ada perubahan dari luar
+- [ ] Verify repo GitHub sudah public/private sesuai preference
+- [ ] Signup Vercel (login pakai GitHub)
+- [ ] Share preview URL ke ortu untuk lihat progress fisik
 
 ## Planned Tasks (Prioritized)
 
-### 1. Initial Git Commit + GitHub Push (~30 menit)
-
-- Verify `.gitignore` sudah exclude `node_modules`, `.env*`, `.next/`
-- `git add .` + review dengan `git status`
-- Commit pertama: `chore: initial scaffold Next.js 16 + Konva + Zustand`
-- Buat repo GitHub private (nama: `ainy-keramik-visualizer`)
-- Push ke remote
-
-**Definition of done:** Repo GitHub live, semua kode ke-push, tidak ada secret leak.
-
-### 2. Setup Vercel Deploy (~30 menit)
+### 1. Deploy Vercel (~30 menit)
 
 - Install Vercel CLI: `npm i -g vercel` (per session start advisory)
-- Connect Vercel ke GitHub repo
+- Login Vercel: `vercel login`
+- Import repo GitHub ke Vercel (via dashboard atau CLI)
 - Deploy preview otomatis via `git push`
-- Verify URL preview accessible
+- Verify URL preview accessible dari HP
 
-**Definition of done:** Preview URL live, bisa dibuka dari HP ortu.
+**Definition of done:** Preview URL live, ortu bisa buka dari HP, semua 4 route + canvas jalan.
 
-### 3. Bikin Skeleton Screens (~2 jam)
+### 2. Implement Tile Pattern Rendering di Canvas (~2 jam)
 
-Ikuti component hierarchy Section 13.5 master prompt.
+Follow Section 15.3 master prompt (Tile Rendering Math).
 
-Routes yang dibuat:
-- `/` → Selection (Wall vs Floor) — 2 tombol besar
-- `/dimension` → Dimension input (form width + height meter)
-- `/design` → Design canvas (placeholder Konva stage kosong)
-- `/preview` → Preview & export (placeholder)
+Files:
+- Add pattern logic: `src/lib/math/tile-pattern.js` — pure function `calculateStraightPattern()`
+- Extend `DesignCanvas.js` — render tile grid inside area
+- Pattern V1 = straight only (grid layout)
 
-Setiap screen: heading + button "Back" + button "Next" untuk navigation flow.
+Test skenario:
+- Area 4m × 3m, tile 60×60 cm, nat 3mm → ~35 tiles
+- Area 3.5m × 2.5m, tile 30×60 cm, nat 3mm → ~49 tiles
 
-**Definition of done:** User bisa klik dari `/` sampai `/preview` end-to-end via keyboard/touch, tanpa error console.
+**Definition of done:** Canvas render tile grid dengan spacing nat sesuai config, math accurate.
 
-### 4. Setup Password Auth Middleware (~1 jam, kalau waktu cukup)
+### 3. State Extension: Selected Tile + Nat Config (~30 menit)
 
-- Buat `src/middleware.js`
-- Password hash disimpan di `.env.local`
-- Session cookie `next/headers cookies` + signed value
-- Redirect ke `/login` kalau tidak auth
+Extend Zustand store:
+- `selectedTileId`: ProductId | null
+- `natWidth_mm`: number (default 3)
+- `natColor`: string (default 'white')
 
-**Definition of done:** URL `/`, `/dimension`, `/design`, `/preview` protected. Wrong password rejected.
+Untuk sekarang, hard-code tile from `data/products.json` (belum ada UI catalog yang interaktif).
+
+**Definition of done:** Ganti tile config via console (temp) → canvas re-render dengan pattern baru.
+
+### 4. Path A Marketing Check-in (~30 menit)
+
+Per master prompt Section 3.6 — WAJIB paralel.
+
+- Google Business Profile: status? Belum setup → priority 1
+- WhatsApp Business: status? Belum setup → priority 1
+- Ambil 5-10 foto produk toko dengan HP (foundation catalog)
+
+**Definition of done:** Minimum 1 dari 3 marketing infra live (GBP atau WA Business).
 
 ## Reference Materials
 
-- Master prompt Section 13 (component hierarchy)
-- Master prompt Section 16 (state & interaction design)
-- Master prompt Section 21 (security & auth)
-- Next.js 16 middleware docs: baca `node_modules/next/dist/docs/` sebelum implement
+- Master prompt Section 12 (domain — waste factor, brand)
+- Master prompt Section 15.3-15.4 (tile & dus math)
+- Konva docs (react-konva Rect, Group, useImage untuk texture)
 - Vercel CLI docs: https://vercel.com/docs/cli
 
 ## Notes / Warnings
 
-- **Skeleton dulu, canvas belakangan** — jangan implement Konva sebelum navigation kerja end-to-end
-- **Deploy Vercel early** — biar ortu bisa lihat progress fisik (bukan cuma cerita)
-- **Belum spend money** — Vercel Hobby free tier, GitHub free tier, semua $0
-- **Konva SSR gotcha** — WAJIB dynamic import `ssr: false` saat implement DesignCanvas
-- **Path A marketing** — sisakan minimal 30 menit di akhir session untuk marketing task (per Section 3.6)
+- **Belum pakai texture image** — tile masih rectangle warna solid. Texture image (WebP) di Phase 6 nanti.
+- **Turbopack production build** — belum test. Kalau `vercel build` gagal karena Turbopack, fallback ke `next build` dengan webpack.
+- **Ortu-friendly UX** — belum evaluate. Session 3 fokus polish + test dengan ortu.
+- **Konva SSR gotcha** — sudah handled di `DesignCanvas.js` via dynamic import ssr:false. Kalau tambah component Konva baru, INGAT wrap pattern yang sama.
+
+## Backlog (V2+)
+
+- Zustand persist middleware (survive refresh — pakai localStorage)
+- Offset / brick pattern (V1 optional)
+- Undo/redo history stack
+- Product photo library (perlu foto real dari toko)
+- Real product catalog UI (bukan hardcode)
+- Password auth middleware
+- Perspective transform (2D)
+- Save/export as image
