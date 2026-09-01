@@ -1,7 +1,7 @@
 # PROJECT STATUS
 
-**Last Updated:** 2026-08-31 (Session 1)
-**Overall Phase:** Phase 0 — Foundation & Setup (Bulan 1)
+**Last Updated:** 2026-09-01 (Session 2)
+**Overall Phase:** Phase 5-6 (Canvas + Catalog) — jauh ahead dari roadmap
 
 ## Session 1 Progress (2026-08-31)
 
@@ -35,10 +35,10 @@ Kategori status: PLANNED / IN_DESIGN / IN_DEVELOPMENT / IMPLEMENTED / TESTED / S
 | B. Selection (wall/floor) | IMPLEMENTED | Zustand-backed, 2 tombol besar |
 | C. Dimension Input | IMPLEMENTED | Controlled form + validation basic |
 | D. Trim Options | PLANNED | Lisbon ulir, lis, plint, nat |
-| E. Product Catalog | PLANNED | JSON-based V1 di `data/products.json` |
+| E. Product Catalog | IMPLEMENTED | Panel filter by surface, click-to-select, estimation display |
 | F. Drag-Drop | PLANNED | Konva Stage + Transformer |
-| G. Tile Pattern | PLANNED | Straight only V1, offset V2 |
-| H. Nat Rendering | PLANNED | Width 2/3/5/8mm, color customizable |
+| G. Tile Pattern | IMPLEMENTED | Straight grid, pure math function separated (Section 15.3) |
+| H. Nat Rendering | IMPLEMENTED | Width 2/3/5/8mm, 5 colors, live re-render |
 | I. Perspective (2D) | PLANNED | CSS 3D transform atau Konva matrix |
 | J. Save/Export | PLANNED | Konva stage.toDataURL() + download |
 | K. Admin Catalog | PLANNED | V2 kemungkinan (edit JSON via GitHub V1) |
@@ -72,6 +72,24 @@ _(none saat ini)_
 - **ADR-002** — Next.js 16 adoption (divergence dari master prompt Next.js 14)
 
 ## Recent Sessions Log
+
+### Session 2 — 2026-09-01 (Tile Pattern + Catalog)
+- **Duration:** ~1 jam (efisien, di bawah estimate)
+- **Accomplished:**
+  - Extended Zustand: `selectedTileId`, `natWidth_mm`, `natColor`
+  - Data helpers: `getProductById`, `getNatHexById`, `getAllProducts`
+  - Pure math: `calculateStraightPattern`, `estimateNeeded` (Section 15.3-15.4)
+  - Konva render: tile grid with nat backdrop
+  - CatalogPanel module: filter by surface, click tile, nat controls, live estimation
+- **Learned:**
+  - Turbopack Fast Refresh butuh browser refresh untuk dynamic imports baru
+  - Zustand selector optimal (subscribe per state slice, avoid re-render)
+  - React `useMemo` untuk expensive calculation (pattern re-compute only when deps change)
+- **Verified via browser automation:**
+  - Roman Crema 60×60 + nat 3mm + white → 24 tiles, 7 dus, Rp 1.995.000
+  - Mulia Cotto 40×40 + nat 8mm + grey → 63 tiles, 12 dus, Rp 936.000
+- **Deferred:** Real texture images (Phase 6), partial tile rendering at edges, offset pattern
+- **Next Priority:** Vercel deploy + Path A marketing check-in
 
 ### Session 1 — 2026-08-31 (Foundation Setup)
 - **Duration:** ~1 jam

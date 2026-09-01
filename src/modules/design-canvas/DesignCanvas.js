@@ -1,135 +1,142 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Stage, Layer, Rect, Text, Line } from "react-konva";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Stage, Layer, Rect, Text } from "react-konva";
 import { useDesignStore } from "@/stores/design-store";
+import { getProductById, getNatHexById } from "@/lib/data/products";
+import { calculateStraightPattern } from "@/lib/math/tile-pattern";
 
 const PADDING = 40;
-const GRID_STEP_M = 0.5;
+
+const TAG_COLOR = {
+  cream: "#f5e8d0",
+  beige: "#e8d5b0",
+  red: "#c8825a",
+  grey: "#a0a0a0",
+  black: "#3a3a3a",
+  white: "#f8f5f0",
+  brown: "#8b6b4a",
+};
+
+function tileFillFromProduct(product) {
+  if (!product) return "#e8d5b0";
+  const matchedTag = product.tags?.find((t) => TAG_COLOR[t]);
+  return TAG_COLOR[matchedTag] ?? "#e8d5b0";
+}
 
 export default function DesignCanvas() {
   const containerRef = useRef(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
-  const surface = useDesignStore((state) => state.surface);
-  const dimensions = useDesignStore((state) => state.dimensions);
+  const dimensions = useDesignStore((s) => s.dimensions);
+  const selectedTileId = useDesignStore((s) => s.selectedTileId);
+  const natWidth_mm = useDesignStore((s) => s.natWidth_mm);
+  const natColor = useDesignStore((s) => s.natColor);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
     const measure = () => {
       const rect = el.getBoundingClientRect();
       setSize({ width: rect.width, height: rect.height });
     };
-
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
+  const product = getProductById(selectedTileId);
   const { width_m, height_m } = dimensions;
-  const ready = width_m && height_m && size.width > 0 && size.height > 0;
+  const ready =
+    width_m && height_m && size.width > 0 && size.height > 0 && product;
 
-  let scale = 0;
-  let areaWidth = 0;
-  let areaHeight = 0;
-  let originX = 0;
-  let originY = 0;
-  let gridLines = [];
-
-  if (ready) {
-    scale = Math.min(
-      (size.width - 2 * PADDING) / width_m,
-      (size.height - 2 * PADDING) / height_m,
-    );
-    areaWidth = width_m * scale;
-    areaHeight = height_m * scale;
-    originX = (size.width - areaWidth) / 2;
-    originY = (size.height - areaHeight) / 2;
-
-    const gridStepPx = GRID_STEP_M * scale;
-    for (let x = gridStepPx; x < areaWidth; x += gridStepPx) {
-      gridLines.push({
-        points: [originX + x, originY, originX + x, originY + areaHeight],
-      });
-    }
-    for (let y = gridStepPx; y < areaHeight; y += gridStepPx) {
-      gridLines.push({
-        points: [originX, originY + y, originX + areaWidth, originY + y],
-      });
-    }
-  }
-
-  const fillColor = surface === "floor" ? "#e8dfc9" : "#f0e7d4";
+  const pattern = useMemo(() => {
+    if (!ready) return null;
+    return calculateStraightPattern({
+      area: { width_m, height_m },
+      tile: {
+        width_cm: product.size_cm.width,
+        height_cm: product.size_cm.height,
+      },
+      natWidth_mm,
+    });
+  }, [ready, width_m, height_m, product, natWidth_mm]);
 
   return (
     <div
       ref={containerRef}
       className="w-full h-full min-h-[400px] rounded-2xl border-2 border-current/20 overflow-hidden bg-white dark:bg-slate-900"
     >
-      {ready && (
-        <Stage width={size.width} height={size.height}>
-          <Layer>
-            <Rect
-              x={originX}
-              y={originY}
-              width={areaWidth}
-              height={areaHeight}
-              fill={fillColor}
-              stroke="#334155"
-              strokeWidth={2}
-            />
-            {gridLines.map((line, i) => (
-              <Line
-                key={i}
-                points={line.points}
-                stroke="#94a3b8"
-                strokeWidth={0.5}
-                dash={[4, 4]}
-              />
-            ))}
-            <Text
-              x={originX}
-              y={originY + areaHeight + 8}
-              width={areaWidth}
-              text={`${width_m} m`}
-              fontSize={14}
-              fill="#334155"
-              align="center"
-            />
-            <Text
-              x={originX - 60}
-              y={originY + areaHeight / 2 - 8}
-              width={50}
-              text={`${height_m} m`}
-              fontSize={14}
-              fill="#334155"
-              align="right"
-            />
-            <Text
-              x={originX + areaWidth / 2 - 100}
-              y={originY + areaHeight / 2 - 30}
-              width={200}
-              text={`${(width_m * height_m).toFixed(2)} m²`}
-              fontSize={20}
-              fontStyle="bold"
-              fill="#0f172a"
-              align="center"
-            />
-            <Text
-              x={originX + areaWidth / 2 - 100}
-              y={originY + areaHeight / 2 + 4}
-              width={200}
-              text="area kosong · drag keramik ke sini"
-              fontSize={12}
-              fill="#64748b"
-              align="center"
-            />
-          </Layer>
-        </Stage>
+      {ready && pattern && (
+        <CanvasStage
+          size={size}
+          pattern={pattern}
+          product={product}
+          natColorHex={getNatHexById(natColor)}
+          widthLabel={`${width_m} m`}
+          heightLabel={`${height_m} m`}
+        />
       )}
     </div>
+  );
+}
+
+function CanvasStage({ size, pattern, product, natColorHex, widthLabel, heightLabel }) {
+  const scale = Math.min(
+    (size.width - 2 * PADDING) / pattern.areaWidth_mm,
+    (size.height - 2 * PADDING) / pattern.areaHeight_mm,
+  );
+  const areaWidthPx = pattern.areaWidth_mm * scale;
+  const areaHeightPx = pattern.areaHeight_mm * scale;
+  const originX = (size.width - areaWidthPx) / 2;
+  const originY = (size.height - areaHeightPx) / 2;
+  const fillColor = tileFillFromProduct(product);
+
+  return (
+    <Stage width={size.width} height={size.height}>
+      <Layer>
+        <Rect
+          x={originX}
+          y={originY}
+          width={areaWidthPx}
+          height={areaHeightPx}
+          fill={natColorHex}
+          stroke="#334155"
+          strokeWidth={2}
+        />
+        {pattern.tiles.map((t, i) => (
+          <Rect
+            key={i}
+            x={originX + t.x_mm * scale}
+            y={originY + t.y_mm * scale}
+            width={t.width_mm * scale}
+            height={t.height_mm * scale}
+            fill={fillColor}
+            stroke="rgba(15,23,42,0.15)"
+            strokeWidth={0.5}
+            perfectDrawEnabled={false}
+          />
+        ))}
+        <Text
+          x={originX}
+          y={originY + areaHeightPx + 8}
+          width={areaWidthPx}
+          text={widthLabel}
+          fontSize={14}
+          fill="#334155"
+          align="center"
+        />
+        <Text
+          x={originX - 60}
+          y={originY + areaHeightPx / 2 - 8}
+          width={50}
+          text={heightLabel}
+          fontSize={14}
+          fill="#334155"
+          align="right"
+        />
+      </Layer>
+    </Stage>
   );
 }

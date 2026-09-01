@@ -18,6 +18,18 @@ const DesignCanvas = dynamic(
   },
 );
 
+const CatalogPanel = dynamic(
+  () => import("@/modules/catalog/CatalogPanel"),
+  {
+    ssr: false,
+    loading: () => (
+      <aside className="rounded-2xl border-2 border-current/20 p-4">
+        <p className="opacity-60">Memuat katalog...</p>
+      </aside>
+    ),
+  },
+);
+
 export default function DesignPage() {
   const router = useRouter();
   const surface = useDesignStore((state) => state.surface);
@@ -59,23 +71,7 @@ export default function DesignPage() {
           <DesignCanvas />
         </section>
 
-        <aside className="rounded-2xl border-2 border-dashed border-current/40 p-6 flex flex-col gap-4">
-          <h3 className="text-xl font-bold">Katalog</h3>
-          <p className="opacity-70">
-            Panel produk & filter. Implementasi Session 12-14.
-          </p>
-          <div className="flex flex-col gap-2 opacity-60">
-            <div className="rounded-lg border border-current/30 p-3">
-              Roman Crema Marfil 60×60
-            </div>
-            <div className="rounded-lg border border-current/30 p-3">
-              Roman Onyx Beige 30×60
-            </div>
-            <div className="rounded-lg border border-current/30 p-3">
-              Mulia Cotto 40×40
-            </div>
-          </div>
-        </aside>
+        <CatalogPanel />
       </div>
     </main>
   );
