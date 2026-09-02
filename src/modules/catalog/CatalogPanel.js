@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useDesignStore } from "@/stores/design-store";
 import { getAllProducts, getProductById, getAllNatColors } from "@/lib/data/products";
 import { calculateStraightPattern, estimateNeeded } from "@/lib/math/tile-pattern";
@@ -30,6 +30,14 @@ export default function CatalogPanel() {
 
   const natColors = getAllNatColors();
   const currentProduct = getProductById(selectedTileId);
+
+  useEffect(() => {
+    if (products.length === 0) return;
+    const isInList = products.some((p) => p.id === selectedTileId);
+    if (!isInList) {
+      setSelectedTile(products[0].id);
+    }
+  }, [products, selectedTileId, setSelectedTile]);
 
   const estimate = useMemo(() => {
     if (!currentProduct || !dimensions.width_m || !dimensions.height_m) return null;

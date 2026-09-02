@@ -5,14 +5,23 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useDesignStore } from "@/stores/design-store";
 
+const DEFAULT_DIMENSIONS = {
+  wall: { width_m: 3, height_m: 2.5 },
+  floor: { width_m: 4, height_m: 3 },
+};
+
+const MIN_DIM_M = 0.5;
+const MAX_DIM_M = 15;
+
 export default function DimensionPage() {
   const router = useRouter();
   const surface = useDesignStore((state) => state.surface);
   const dimensions = useDesignStore((state) => state.dimensions);
   const setDimensions = useDesignStore((state) => state.setDimensions);
 
-  const [width, setWidth] = useState(dimensions.width_m ?? "");
-  const [height, setHeight] = useState(dimensions.height_m ?? "");
+  const defaults = DEFAULT_DIMENSIONS[surface] ?? DEFAULT_DIMENSIONS.wall;
+  const [width, setWidth] = useState(dimensions.width_m ?? defaults.width_m);
+  const [height, setHeight] = useState(dimensions.height_m ?? defaults.height_m);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -28,12 +37,12 @@ export default function DimensionPage() {
   const handleNext = () => {
     const w = Number(width);
     const h = Number(height);
-    if (!w || !h || w <= 0 || h <= 0) {
-      setError("Masukkan lebar dan tinggi lebih dari 0.");
+    if (!w || !h || w < MIN_DIM_M || h < MIN_DIM_M) {
+      setError(`Masukkan ukuran minimal ${MIN_DIM_M} meter.`);
       return;
     }
-    if (w > 20 || h > 20) {
-      setError("Ukuran maksimum 20 meter.");
+    if (w > MAX_DIM_M || h > MAX_DIM_M) {
+      setError(`Ukuran maksimum ${MAX_DIM_M} meter. Untuk area lebih besar, bagi jadi beberapa bagian.`);
       return;
     }
     setDimensions(w, h);
@@ -65,8 +74,8 @@ export default function DimensionPage() {
               <input
                 type="number"
                 step="0.1"
-                min="0.1"
-                max="20"
+                min="0.5"
+                max="15"
                 inputMode="decimal"
                 placeholder="Contoh: 3.5"
                 value={width}
@@ -80,8 +89,8 @@ export default function DimensionPage() {
               <input
                 type="number"
                 step="0.1"
-                min="0.1"
-                max="20"
+                min="0.5"
+                max="15"
                 inputMode="decimal"
                 placeholder="Contoh: 2.5"
                 value={height}

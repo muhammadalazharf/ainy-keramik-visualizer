@@ -1,7 +1,7 @@
 # PROJECT STATUS
 
-**Last Updated:** 2026-09-01 (Session 2)
-**Overall Phase:** Phase 5-6 (Canvas + Catalog) — jauh ahead dari roadmap
+**Last Updated:** 2026-09-01 (Session 3 — Debug)
+**Overall Phase:** Phase 5-6 (Canvas + Catalog) — production-ready untuk V1 slice, awaiting deploy
 
 ## Session 1 Progress (2026-08-31)
 
@@ -72,6 +72,28 @@ _(none saat ini)_
 - **ADR-002** — Next.js 16 adoption (divergence dari master prompt Next.js 14)
 
 ## Recent Sessions Log
+
+### Session 3 — 2026-09-01 (Debug Session: Audit-Driven Fixes)
+
+- **Duration:** ~30 menit
+- **Trigger:** External audit report (`AUDIT_REPORT_AND_DEBUG_PROMPT.md`) berdasar screen recording user
+- **Method:** Reproduce di browser + JS instrumentation, bukan asumsi buta ke hypothesis audit
+- **Findings vs Audit:**
+  - **P0 Auto-Zoom Loop:** NOT REPRODUCED di code current. Container size stabil 891.2×676px (later 927.2×711.2) selama 5 detik. Defensive fix diapply preventive.
+  - **P1 Bug #1 & #2 (tile count + price mismatch):** REAL BUG, single root cause. `selectedTileId` default = `roman-crema-marfil-60x60` (floor category). Saat user pilih Dinding, katalog filter → tile visible = Roman Onyx Beige, tapi `selectedTileId` masih pointing ke tile yang ke-filter out (invisible tapi selected). Estimation pakai tile hidden. Angka mismatch dengan card visible sebenarnya BENAR untuk tile hidden (286 dus × 285k = 81.510.000).
+  - **P1 Bug #3 (tile texture):** NOT A BUG. Texture image feature belum implement (Phase 6 roadmap). Solid color = expected.
+  - **P2 Bug #4 (nat not visible):** Physics artifact at 20×20m — nat 3mm scaled ke pixel = sub-pixel. Bukan bug rendering, tapi UX issue karena dimensi unrealistic.
+  - **P2 Issue #1 (default dimension):** Valid concern. Fixed.
+- **Fixes Applied:**
+  - `CatalogPanel.js`: `useEffect` auto-select first product saat filter tidak include current selection
+  - `DesignCanvas.js`: ResizeObserver defensive (rAF debounce + Math.floor + no-op guard `Object.is`)
+  - `dimension/page.js`: Realistic defaults per surface, range validation 0.5-15m
+- **Verified via browser automation:**
+  - Wall + 3m×2.5m + Onyx Beige + nat 3mm → 36 tiles, 7 dus, Rp 1.365.000 ✓ math correct
+  - Nat 8mm + hitam → visible gap terlihat di canvas
+  - Container size stable 5s (927.2 × 711.2, no growth)
+- **Deferred:** Real texture image loading (Phase 6), Drag-drop (Phase 7), Trim rendering (Phase 8), Perspective view (Phase 8)
+- **Next Priority:** Vercel deploy + missing features V1
 
 ### Session 2 — 2026-09-01 (Tile Pattern + Catalog)
 - **Duration:** ~1 jam (efisien, di bawah estimate)

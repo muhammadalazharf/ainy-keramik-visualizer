@@ -36,14 +36,28 @@ export default function DesignCanvas() {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+
+    let raf = 0;
     const measure = () => {
-      const rect = el.getBoundingClientRect();
-      setSize({ width: rect.width, height: rect.height });
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const rect = el.getBoundingClientRect();
+        const w = Math.floor(rect.width);
+        const h = Math.floor(rect.height);
+        setSize((prev) =>
+          prev.width === w && prev.height === h ? prev : { width: w, height: h },
+        );
+      });
     };
+
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
   const product = getProductById(selectedTileId);
