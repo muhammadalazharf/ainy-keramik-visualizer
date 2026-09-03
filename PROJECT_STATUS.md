@@ -34,12 +34,12 @@ Kategori status: PLANNED / IN_DESIGN / IN_DEVELOPMENT / IMPLEMENTED / TESTED / S
 | A. Auth (password gate) | PLANNED | Next.js middleware + bcrypt hash + signed cookie |
 | B. Selection (wall/floor) | IMPLEMENTED | Zustand-backed, 2 tombol besar |
 | C. Dimension Input | IMPLEMENTED | Controlled form + validation basic |
-| D. Trim Options | PLANNED | Lisbon ulir, lis, plint, nat |
+| D. Trim Options | IMPLEMENTED | 3D frame render, perimeter cost (single trim per area V1) |
 | E. Product Catalog | IMPLEMENTED | Panel filter by surface, click-to-select, estimation display |
 | F. Drag-Drop | PLANNED | Konva Stage + Transformer |
 | G. Tile Pattern | IMPLEMENTED | Straight grid, pure math function separated (Section 15.3) |
 | H. Nat Rendering | IMPLEMENTED | Width 2/3/5/8mm, 5 colors, live re-render |
-| I. Perspective (2D) | PLANNED | CSS 3D transform atau Konva matrix |
+| I. Perspective (2D) | SUPERSEDED | Replaced by full 3D via ADR-003 (Three.js OrbitControls) |
 | J. Save/Export | PLANNED | Konva stage.toDataURL() + download |
 | K. Admin Catalog | PLANNED | V2 kemungkinan (edit JSON via GitHub V1) |
 
