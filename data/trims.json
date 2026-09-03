@@ -4,23 +4,30 @@
     "name": "Lisbon Ulir Classic",
     "type": "lisbon-ulir",
     "width_cm": 8,
+    "hex": "#8a6a48",
     "thumbnail_url": "/trims/lisbon-ulir-classic-8cm.jpg",
-    "price_per_meter": 45000
+    "price_per_meter": 45000,
+    "for_surface": ["wall"]
   },
   {
     "id": "lis-keramik-plain-5cm",
     "name": "Lis Keramik Plain",
     "type": "lis-keramik",
     "width_cm": 5,
+    "hex": "#c9b89a",
     "thumbnail_url": "/trims/lis-keramik-plain-5cm.jpg",
-    "price_per_meter": 25000
+    "price_per_meter": 25000,
+    "for_surface": ["wall", "floor"]
   },
   {
     "id": "plint-standard-10cm",
     "name": "Plint Standard",
     "type": "plint",
     "width_cm": 10,
+    "hex": "#6d4c41",
     "thumbnail_url": "/trims/plint-standard-10cm.jpg",
-    "price_per_meter": 35000
+    "price_per_meter": 35000,
+    "for_surface": ["floor"]
   }
 ]
+

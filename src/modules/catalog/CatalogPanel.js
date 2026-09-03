@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { useDesignStore } from "@/stores/design-store";
 import { getAllProducts, getProductById, getAllNatColors } from "@/lib/data/products";
+import { getTrimsForSurface, getTrimById, estimateTrimCost } from "@/lib/data/trims";
 import { calculateStraightPattern, estimateNeeded } from "@/lib/math/tile-pattern";
 
 const NAT_WIDTH_OPTIONS = [2, 3, 5, 8];
@@ -13,11 +14,19 @@ export default function CatalogPanel() {
   const selectedTileId = useDesignStore((s) => s.selectedTileId);
   const natWidth_mm = useDesignStore((s) => s.natWidth_mm);
   const natColor = useDesignStore((s) => s.natColor);
+  const selectedTrimId = useDesignStore((s) => s.selectedTrimId);
   const setSelectedTile = useDesignStore((s) => s.setSelectedTile);
   const setNatWidth = useDesignStore((s) => s.setNatWidth);
   const setNatColor = useDesignStore((s) => s.setNatColor);
+  const setSelectedTrim = useDesignStore((s) => s.setSelectedTrim);
 
   const surface = useDesignStore((s) => s.surface);
+  const trims = useMemo(() => getTrimsForSurface(surface), [surface]);
+  const currentTrim = getTrimById(selectedTrimId);
+  const trimEstimate = useMemo(
+    () => estimateTrimCost({ trim: currentTrim, dimensions }),
+    [currentTrim, dimensions],
+  );
 
   const products = useMemo(() => {
     const all = getAllProducts();
@@ -74,9 +83,23 @@ export default function CatalogPanel() {
             <dd className="text-right font-medium">{estimate.tilesWithWaste} pcs</dd>
             <dt className="opacity-70">Dus</dt>
             <dd className="text-right font-medium">{estimate.dusNeeded} dus</dd>
-            <dt className="opacity-70 pt-1">Total</dt>
-            <dd className="text-right font-bold pt-1">
+            <dt className="opacity-70">Keramik</dt>
+            <dd className="text-right font-medium">
               Rp {currency.format(estimate.totalPrice)}
+            </dd>
+            {trimEstimate && currentTrim && (
+              <>
+                <dt className="opacity-70">Trim ({trimEstimate.perimeter_m}m)</dt>
+                <dd className="text-right font-medium">
+                  Rp {currency.format(trimEstimate.totalPrice)}
+                </dd>
+              </>
+            )}
+            <dt className="opacity-70 pt-1 font-semibold">Total</dt>
+            <dd className="text-right font-bold pt-1">
+              Rp {currency.format(
+                estimate.totalPrice + (trimEstimate?.totalPrice ?? 0),
+              )}
             </dd>
           </dl>
         </section>
@@ -115,6 +138,51 @@ export default function CatalogPanel() {
               Belum ada produk cocok untuk {surface}.
             </p>
           )}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h3 className="text-lg font-bold">Trim (Border)</h3>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedTrim(null)}
+            className={`text-left rounded-lg border-2 p-3 transition ${
+              !selectedTrimId
+                ? "border-slate-900 bg-slate-900/5 dark:border-slate-100 dark:bg-slate-100/10"
+                : "border-current/20 hover:border-current/50"
+            }`}
+          >
+            <div className="text-sm font-semibold">Tanpa Trim</div>
+            <div className="text-xs opacity-70 mt-0.5">Tidak pakai border</div>
+          </button>
+          {trims.map((t) => {
+            const active = t.id === selectedTrimId;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setSelectedTrim(t.id)}
+                className={`text-left rounded-lg border-2 p-3 transition ${
+                  active
+                    ? "border-slate-900 bg-slate-900/5 dark:border-slate-100 dark:bg-slate-100/10"
+                    : "border-current/20 hover:border-current/50"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-4 h-4 rounded border border-current/40"
+                    style={{ backgroundColor: t.hex }}
+                    aria-hidden="true"
+                  />
+                  <span className="text-sm font-semibold">{t.name}</span>
+                </div>
+                <div className="text-xs opacity-70 mt-0.5">
+                  Lebar {t.width_cm} cm · Rp {currency.format(t.price_per_meter)}/m
+                </div>
+              </button>
+            );
+          })}
         </div>
       </section>
 

@@ -5,6 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
 import { useDesignStore } from "@/stores/design-store";
 import { getProductById, getNatHexById } from "@/lib/data/products";
+import { getTrimById } from "@/lib/data/trims";
 import { calculateStraightPattern } from "@/lib/math/tile-pattern";
 import { makeProceduralTileTexture } from "@/lib/textures/proceduralTile";
 
@@ -26,6 +27,62 @@ function tileFillFromProduct(product) {
 
 const TILE_DEPTH_M = 0.008;
 const NAT_DEPTH_M = 0.006;
+const TRIM_DEPTH_M = 0.012;
+
+function TrimFrame({ surface, areaW, areaH, trim }) {
+  if (!trim) return null;
+  const width_m = trim.width_cm / 100;
+  const color = trim.hex ?? "#8a6a48";
+  const isFloor = surface === "floor";
+
+  const material = (
+    <meshStandardMaterial color={color} roughness={0.5} metalness={0.1} />
+  );
+
+  if (isFloor) {
+    return (
+      <group>
+        <mesh position={[areaW / 2, TRIM_DEPTH_M / 2, -width_m / 2]} castShadow receiveShadow>
+          <boxGeometry args={[areaW + 2 * width_m, TRIM_DEPTH_M, width_m]} />
+          {material}
+        </mesh>
+        <mesh position={[areaW / 2, TRIM_DEPTH_M / 2, areaH + width_m / 2]} castShadow receiveShadow>
+          <boxGeometry args={[areaW + 2 * width_m, TRIM_DEPTH_M, width_m]} />
+          {material}
+        </mesh>
+        <mesh position={[-width_m / 2, TRIM_DEPTH_M / 2, areaH / 2]} castShadow receiveShadow>
+          <boxGeometry args={[width_m, TRIM_DEPTH_M, areaH]} />
+          {material}
+        </mesh>
+        <mesh position={[areaW + width_m / 2, TRIM_DEPTH_M / 2, areaH / 2]} castShadow receiveShadow>
+          <boxGeometry args={[width_m, TRIM_DEPTH_M, areaH]} />
+          {material}
+        </mesh>
+      </group>
+    );
+  }
+
+  return (
+    <group>
+      <mesh position={[areaW / 2, areaH + width_m / 2, TRIM_DEPTH_M / 2]} castShadow receiveShadow>
+        <boxGeometry args={[areaW + 2 * width_m, width_m, TRIM_DEPTH_M]} />
+        {material}
+      </mesh>
+      <mesh position={[areaW / 2, -width_m / 2, TRIM_DEPTH_M / 2]} castShadow receiveShadow>
+        <boxGeometry args={[areaW + 2 * width_m, width_m, TRIM_DEPTH_M]} />
+        {material}
+      </mesh>
+      <mesh position={[-width_m / 2, areaH / 2, TRIM_DEPTH_M / 2]} castShadow receiveShadow>
+        <boxGeometry args={[width_m, areaH, TRIM_DEPTH_M]} />
+        {material}
+      </mesh>
+      <mesh position={[areaW + width_m / 2, areaH / 2, TRIM_DEPTH_M / 2]} castShadow receiveShadow>
+        <boxGeometry args={[width_m, areaH, TRIM_DEPTH_M]} />
+        {material}
+      </mesh>
+    </group>
+  );
+}
 
 function TileGrid({ surface, pattern, tileColor, natColorHex }) {
   const tiles = useMemo(() => pattern.tiles, [pattern]);
@@ -104,8 +161,10 @@ export default function Scene3D() {
   const selectedTileId = useDesignStore((s) => s.selectedTileId);
   const natWidth_mm = useDesignStore((s) => s.natWidth_mm);
   const natColor = useDesignStore((s) => s.natColor);
+  const selectedTrimId = useDesignStore((s) => s.selectedTrimId);
 
   const product = getProductById(selectedTileId);
+  const trim = getTrimById(selectedTrimId);
 
   const pattern = useMemo(() => {
     if (!product || !dimensions.width_m || !dimensions.height_m) return null;
@@ -166,6 +225,12 @@ export default function Scene3D() {
             pattern={pattern}
             tileColor={tileColor}
             natColorHex={natColorHex}
+          />
+          <TrimFrame
+            surface={surface}
+            areaW={areaW}
+            areaH={areaH}
+            trim={trim}
           />
 
           {isFloor && (

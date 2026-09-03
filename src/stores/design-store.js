@@ -11,6 +11,7 @@ const initialState = {
   selectedTileId: DEFAULT_TILE_ID,
   natWidth_mm: 3,
   natColor: "white",
+  selectedTrimId: null,
 };
 
 export const useDesignStore = create((set) => ({
@@ -31,6 +32,8 @@ export const useDesignStore = create((set) => ({
   setNatWidth: (mm) => set({ natWidth_mm: Number(mm) }),
 
   setNatColor: (color) => set({ natColor: color }),
+
+  setSelectedTrim: (id) => set({ selectedTrimId: id }),
 
   reset: () => set(initialState),
 }));
