@@ -1,7 +1,7 @@
 # PROJECT STATUS
 
-**Last Updated:** 2026-09-01 (Session 3 — Debug)
-**Overall Phase:** Phase 5-6 (Canvas + Catalog) — production-ready untuk V1 slice, awaiting deploy
+**Last Updated:** 2026-09-03 (Session 3b — Real Textures)
+**Overall Phase:** Phase 5-6 + real texture (Phase D per ADR-003) — production-ready V1, awaiting Vercel deploy
 
 ## Session 1 Progress (2026-08-31)
 
@@ -72,6 +72,25 @@ _(none saat ini)_
 - **ADR-002** — Next.js 16 adoption (divergence dari master prompt Next.js 14)
 
 ## Recent Sessions Log
+
+### Session 3b — 2026-09-03 (Real Texture Assets)
+
+- **Duration:** ~30 menit
+- **Trigger:** User provide 3 real image tile keramik (upload via chat)
+- **Accomplished:**
+  - Add 3 new floor products (Roman Calacatta White, Roman Onyx Cream, Mulia Vintage Grey Pattern)
+  - Implement `useTileTexture` hook: try load real image first, fallback procedural
+  - Global `REAL_TEXTURE_CACHE` untuk avoid duplicate loading
+  - File rename debug (initial guess wrong, fixed via visual verification)
+- **Verified via browser:**
+  - Calacatta White render as marble putih dengan black veining ✓
+  - Onyx Cream render as warm cream dengan orange veining ✓
+  - Vintage Grey Pattern render as grey geometric pattern ✓
+- **Deferred:** Real thumbnails (currently reusing texture image as thumbnail, works but suboptimal size)
+- **Learned:**
+  - File cache invalidation di JS module scope perlu hard reload
+  - `git status` diagnostic penting untuk detect ambient file changes
+  - Visual verification kritis untuk asset mapping — filename saja bisa salah
 
 ### Session 3 — 2026-09-01 (Debug Session: Audit-Driven Fixes)
 
