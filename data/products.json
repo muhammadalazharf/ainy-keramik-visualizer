@@ -47,8 +47,8 @@
     "pieces_per_dus": 4,
     "coverage_per_dus_m2": 1.44,
     "price_per_dus": 385000,
-    "thumbnail_url": "/textures/calacatta-white-60x60.jpg",
-    "texture_url": "/textures/calacatta-white-60x60.jpg",
+    "thumbnail_url": "/textures/calacatta-white-60x60.png",
+    "texture_url": "/textures/calacatta-white-60x60.png",
     "tags": ["white", "marble-look", "premium", "polished"]
   },
   {
@@ -60,8 +60,8 @@
     "pieces_per_dus": 4,
     "coverage_per_dus_m2": 1.44,
     "price_per_dus": 325000,
-    "thumbnail_url": "/textures/onyx-cream-60x60.jpg",
-    "texture_url": "/textures/onyx-cream-60x60.jpg",
+    "thumbnail_url": "/textures/onyx-cream-60x60.png",
+    "texture_url": "/textures/onyx-cream-60x60.png",
     "tags": ["cream", "onyx-look", "premium", "polished"]
   },
   {
@@ -73,8 +73,8 @@
     "pieces_per_dus": 11,
     "coverage_per_dus_m2": 0.99,
     "price_per_dus": 125000,
-    "thumbnail_url": "/textures/vintage-grey-30x30.jpg",
-    "texture_url": "/textures/vintage-grey-30x30.jpg",
+    "thumbnail_url": "/textures/vintage-grey-30x30.png",
+    "texture_url": "/textures/vintage-grey-30x30.png",
     "tags": ["grey", "pattern", "decorative", "matt"]
   }
 ]
