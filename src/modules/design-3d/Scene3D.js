@@ -2,10 +2,11 @@
 
 import { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Grid, Environment } from "@react-three/drei";
+import { OrbitControls, Grid } from "@react-three/drei";
 import { useDesignStore } from "@/stores/design-store";
 import { getProductById, getNatHexById } from "@/lib/data/products";
 import { calculateStraightPattern } from "@/lib/math/tile-pattern";
+import { makeProceduralTileTexture } from "@/lib/textures/proceduralTile";
 
 const TAG_COLOR = {
   cream: "#f5e8d0",
@@ -33,22 +34,25 @@ function TileGrid({ surface, pattern, tileColor, natColorHex }) {
 
   const isFloor = surface === "floor";
 
+  const tileTexture = useMemo(
+    () => makeProceduralTileTexture(tileColor, 256),
+    [tileColor],
+  );
+
   return (
     <group>
-      {/* Nat backdrop (larger plane behind tiles) */}
       {isFloor ? (
-        <mesh position={[areaW / 2, NAT_DEPTH_M / 2, areaH / 2]}>
+        <mesh position={[areaW / 2, NAT_DEPTH_M / 2, areaH / 2]} receiveShadow>
           <boxGeometry args={[areaW, NAT_DEPTH_M, areaH]} />
           <meshStandardMaterial color={natColorHex} roughness={0.9} />
         </mesh>
       ) : (
-        <mesh position={[areaW / 2, areaH / 2, NAT_DEPTH_M / 2]}>
+        <mesh position={[areaW / 2, areaH / 2, NAT_DEPTH_M / 2]} receiveShadow>
           <boxGeometry args={[areaW, areaH, NAT_DEPTH_M]} />
           <meshStandardMaterial color={natColorHex} roughness={0.9} />
         </mesh>
       )}
 
-      {/* Tiles */}
       {tiles.map((t, i) => {
         const x = (t.x_mm + t.width_mm / 2) / 1000;
         const y = (t.y_mm + t.height_mm / 2) / 1000;
@@ -65,8 +69,9 @@ function TileGrid({ surface, pattern, tileColor, natColorHex }) {
             >
               <boxGeometry args={[w, TILE_DEPTH_M, h]} />
               <meshStandardMaterial
-                color={tileColor}
-                roughness={0.4}
+                map={tileTexture}
+                color="#ffffff"
+                roughness={0.35}
                 metalness={0.05}
               />
             </mesh>
@@ -81,8 +86,9 @@ function TileGrid({ surface, pattern, tileColor, natColorHex }) {
           >
             <boxGeometry args={[w, h, TILE_DEPTH_M]} />
             <meshStandardMaterial
-              color={tileColor}
-              roughness={0.4}
+              map={tileTexture}
+              color="#ffffff"
+              roughness={0.35}
               metalness={0.05}
             />
           </mesh>
