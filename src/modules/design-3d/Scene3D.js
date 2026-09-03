@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
 import { useDesignStore } from "@/stores/design-store";
@@ -8,6 +9,55 @@ import { getProductById, getNatHexById } from "@/lib/data/products";
 import { getTrimById } from "@/lib/data/trims";
 import { calculateStraightPattern } from "@/lib/math/tile-pattern";
 import { makeProceduralTileTexture } from "@/lib/textures/proceduralTile";
+
+const REAL_TEXTURE_CACHE = new Map();
+
+function loadRealTexture(url) {
+  if (REAL_TEXTURE_CACHE.has(url)) return REAL_TEXTURE_CACHE.get(url);
+  const promise = new Promise((resolve) => {
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      url,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.anisotropy = 8;
+        resolve(tex);
+      },
+      undefined,
+      () => resolve(null),
+    );
+  });
+  REAL_TEXTURE_CACHE.set(url, promise);
+  return promise;
+}
+
+function useTileTexture(product, fallbackColor) {
+  const [realTex, setRealTex] = useState(null);
+  const textureUrl = product?.texture_url;
+
+  useEffect(() => {
+    if (!textureUrl) {
+      setRealTex(null);
+      return;
+    }
+    let cancelled = false;
+    loadRealTexture(textureUrl).then((tex) => {
+      if (!cancelled) setRealTex(tex);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [textureUrl]);
+
+  const proceduralTex = useMemo(
+    () => makeProceduralTileTexture(fallbackColor, 256),
+    [fallbackColor],
+  );
+
+  return realTex ?? proceduralTex;
+}
 
 const TAG_COLOR = {
   cream: "#f5e8d0",
@@ -84,17 +134,14 @@ function TrimFrame({ surface, areaW, areaH, trim }) {
   );
 }
 
-function TileGrid({ surface, pattern, tileColor, natColorHex }) {
+function TileGrid({ surface, pattern, product, tileColor, natColorHex }) {
   const tiles = useMemo(() => pattern.tiles, [pattern]);
   const areaW = pattern.areaWidth_mm / 1000;
   const areaH = pattern.areaHeight_mm / 1000;
 
   const isFloor = surface === "floor";
 
-  const tileTexture = useMemo(
-    () => makeProceduralTileTexture(tileColor, 256),
-    [tileColor],
-  );
+  const tileTexture = useTileTexture(product, tileColor);
 
   return (
     <group>
@@ -223,6 +270,7 @@ export default function Scene3D() {
           <TileGrid
             surface={surface}
             pattern={pattern}
+            product={product}
             tileColor={tileColor}
             natColorHex={natColorHex}
           />

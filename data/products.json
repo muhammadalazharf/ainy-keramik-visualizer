@@ -37,5 +37,44 @@
     "thumbnail_url": "/thumbnails/mulia-cotto-40x40.jpg",
     "texture_url": "/textures/mulia-cotto-40x40.webp",
     "tags": ["red", "matt", "rustic", "budget"]
+  },
+  {
+    "id": "calacatta-white-60x60",
+    "brand": "Roman",
+    "name": "Calacatta White",
+    "size_cm": { "width": 60, "height": 60 },
+    "category": "floor",
+    "pieces_per_dus": 4,
+    "coverage_per_dus_m2": 1.44,
+    "price_per_dus": 385000,
+    "thumbnail_url": "/textures/calacatta-white-60x60.jpg",
+    "texture_url": "/textures/calacatta-white-60x60.jpg",
+    "tags": ["white", "marble-look", "premium", "polished"]
+  },
+  {
+    "id": "onyx-cream-60x60",
+    "brand": "Roman",
+    "name": "Onyx Cream",
+    "size_cm": { "width": 60, "height": 60 },
+    "category": "floor",
+    "pieces_per_dus": 4,
+    "coverage_per_dus_m2": 1.44,
+    "price_per_dus": 325000,
+    "thumbnail_url": "/textures/onyx-cream-60x60.jpg",
+    "texture_url": "/textures/onyx-cream-60x60.jpg",
+    "tags": ["cream", "onyx-look", "premium", "polished"]
+  },
+  {
+    "id": "vintage-grey-30x30",
+    "brand": "Mulia",
+    "name": "Vintage Grey Pattern",
+    "size_cm": { "width": 30, "height": 30 },
+    "category": "floor",
+    "pieces_per_dus": 11,
+    "coverage_per_dus_m2": 0.99,
+    "price_per_dus": 125000,
+    "thumbnail_url": "/textures/vintage-grey-30x30.jpg",
+    "texture_url": "/textures/vintage-grey-30x30.jpg",
+    "tags": ["grey", "pattern", "decorative", "matt"]
   }
 ]
