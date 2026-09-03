@@ -6,13 +6,13 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useDesignStore } from "@/stores/design-store";
 
-const DesignCanvas = dynamic(
-  () => import("@/modules/design-canvas/DesignCanvas"),
+const Scene3D = dynamic(
+  () => import("@/modules/design-3d/Scene3D"),
   {
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center min-h-[400px] rounded-2xl border-2 border-current/20">
-        <p className="opacity-60">Memuat kanvas...</p>
+        <p className="opacity-60">Memuat 3D scene (WebGL)...</p>
       </div>
     ),
   },
@@ -68,7 +68,7 @@ export default function DesignPage() {
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <section className="min-h-[400px]">
-          <DesignCanvas />
+          <Scene3D />
         </section>
 
         <CatalogPanel />
