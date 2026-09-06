@@ -208,10 +208,10 @@ export default function Scene3D() {
   const selectedTileId = useDesignStore((s) => s.selectedTileId);
   const natWidth_mm = useDesignStore((s) => s.natWidth_mm);
   const natColor = useDesignStore((s) => s.natColor);
-  const selectedTrimId = useDesignStore((s) => s.selectedTrimId);
+  const selectedLisbonId = useDesignStore((s) => s.selectedLisbonId);
 
   const product = getProductById(selectedTileId);
-  const trim = getTrimById(selectedTrimId);
+  const trim = getTrimById(selectedLisbonId);
 
   const pattern = useMemo(() => {
     if (!product || !dimensions.width_m || !dimensions.height_m) return null;

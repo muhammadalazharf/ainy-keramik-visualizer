@@ -1,7 +1,6 @@
 [
-  { "id": "white",  "name": "Putih",  "hex": "#F5F5F5" },
-  { "id": "cream",  "name": "Cream",  "hex": "#E8DDC8" },
-  { "id": "grey",   "name": "Abu",    "hex": "#9E9E9E" },
-  { "id": "brown",  "name": "Coklat", "hex": "#6D4C41" },
-  { "id": "black",  "name": "Hitam",  "hex": "#212121" }
+  { "id": "putih",    "name": "Putih",    "hex": "#F5F5F5" },
+  { "id": "semen",    "name": "Semen",    "hex": "#C4B79A" },
+  { "id": "grey",     "name": "Grey",     "hex": "#8E8E8E" },
+  { "id": "charcoal", "name": "Charcoal", "hex": "#3A3A3A" }
 ]

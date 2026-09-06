@@ -1,33 +1,26 @@
 [
   {
-    "id": "lisbon-ulir-classic-8cm",
-    "name": "Lisbon Ulir Classic",
-    "type": "lisbon-ulir",
-    "width_cm": 8,
+    "id": "lisbon-ulir-10x5",
+    "brand": "Indogress",
+    "name": "Lisbon Ulir",
+    "type": "lisbon",
+    "size_cm": { "width": 10, "height": 5 },
+    "width_cm": 10,
     "hex": "#8a6a48",
-    "thumbnail_url": "/trims/lisbon-ulir-classic-8cm.jpg",
+    "thumbnail_url": "/trims/lisbon-ulir-10x5.jpg",
     "price_per_meter": 45000,
-    "for_surface": ["wall"]
-  },
-  {
-    "id": "lis-keramik-plain-5cm",
-    "name": "Lis Keramik Plain",
-    "type": "lis-keramik",
-    "width_cm": 5,
-    "hex": "#c9b89a",
-    "thumbnail_url": "/trims/lis-keramik-plain-5cm.jpg",
-    "price_per_meter": 25000,
     "for_surface": ["wall", "floor"]
   },
   {
-    "id": "plint-standard-10cm",
-    "name": "Plint Standard",
-    "type": "plint",
+    "id": "lisbon-teal-10x8",
+    "brand": "Roman",
+    "name": "Lisbon Teal",
+    "type": "lisbon",
+    "size_cm": { "width": 10, "height": 8 },
     "width_cm": 10,
-    "hex": "#6d4c41",
-    "thumbnail_url": "/trims/plint-standard-10cm.jpg",
-    "price_per_meter": 35000,
-    "for_surface": ["floor"]
+    "hex": "#4a8a8a",
+    "thumbnail_url": "/trims/lisbon-teal-10x8.jpg",
+    "price_per_meter": 55000,
+    "for_surface": ["wall", "floor"]
   }
 ]
-

@@ -1,22 +1,36 @@
 import { create } from "zustand";
 
-const DEFAULT_TILE_ID = "roman-crema-marfil-60x60";
+const DEFAULT_TILE_ID = "travertine-stone-60x60";
 
 const initialState = {
-  surface: null,
-  dimensions: {
-    width_m: null,
-    height_m: null,
-  },
+  currentRoomId: null,
+  currentTemplateId: "modern",
+  surface: "wall",
+  dimensions: { width_m: null, height_m: null },
+
   selectedTileId: DEFAULT_TILE_ID,
+  selectedLisbonId: null,
+
+  pattern: "straight",
   natWidth_mm: 3,
-  natColor: "white",
-  selectedTrimId: null,
+  natColor: "putih",
+
+  catalogTab: "all",
+  catalogQuery: "",
+  lisbonQuery: "",
 };
 
 export const useDesignStore = create((set) => ({
   ...initialState,
 
+  setRoom: (roomId, defaults = {}) =>
+    set((state) => ({
+      currentRoomId: roomId,
+      surface: defaults.surface ?? state.surface,
+      dimensions: defaults.dimensions ?? state.dimensions,
+    })),
+
+  setTemplate: (id) => set({ currentTemplateId: id }),
   setSurface: (surface) => set({ surface }),
 
   setDimensions: (width_m, height_m) =>
@@ -28,12 +42,15 @@ export const useDesignStore = create((set) => ({
     }),
 
   setSelectedTile: (id) => set({ selectedTileId: id }),
+  setSelectedLisbon: (id) => set({ selectedLisbonId: id }),
 
+  setPattern: (pattern) => set({ pattern }),
   setNatWidth: (mm) => set({ natWidth_mm: Number(mm) }),
-
   setNatColor: (color) => set({ natColor: color }),
 
-  setSelectedTrim: (id) => set({ selectedTrimId: id }),
+  setCatalogTab: (tab) => set({ catalogTab: tab }),
+  setCatalogQuery: (query) => set({ catalogQuery: query }),
+  setLisbonQuery: (query) => set({ lisbonQuery: query }),
 
   reset: () => set(initialState),
 }));

@@ -1,0 +1,7 @@
+[
+  { "id": "modern",      "name": "Modern Style",      "description": "Bersih, minimalis, garis tegas" },
+  { "id": "classic",     "name": "Classic Style",     "description": "Elegan, motif tradisional, warm tone" },
+  { "id": "minimalist",  "name": "Minimalist Style",  "description": "Ruang terbuka, warna netral" },
+  { "id": "industrial",  "name": "Industrial Style",  "description": "Beton exposed, warna dingin" },
+  { "id": "rustic",      "name": "Rustic Style",      "description": "Kayu, batu alam, hangat" }
+]
