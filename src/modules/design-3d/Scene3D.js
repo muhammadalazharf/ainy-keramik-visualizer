@@ -345,9 +345,9 @@ export default function Scene3D() {
     });
   }, [floorProduct, width_m, depth_m, natWidth_mm]);
 
-  const camDist = Math.max(width_m, depth_m) * 0.75;
-  const cameraPos = [width_m * 0.4, ceiling_m * 0.65, depth_m / 2 + camDist];
-  const targetPos = [0, ceiling_m * 0.4, -depth_m / 2];
+  const eyeLevel = Math.min(1.6, ceiling_m * 0.6);
+  const cameraPos = [width_m * 0.28, eyeLevel, depth_m * 0.42];
+  const targetPos = [-width_m * 0.15, ceiling_m * 0.35, -depth_m * 0.48];
 
   return (
     <div className="w-full h-full min-h-[400px] rounded-2xl overflow-hidden bg-slate-900">
