@@ -27,56 +27,102 @@ export default function ControlPanel({ room }) {
   const pattern = useDesignStore((s) => s.pattern);
   const natWidth_mm = useDesignStore((s) => s.natWidth_mm);
   const natColor = useDesignStore((s) => s.natColor);
-  const selectedTileId = useDesignStore((s) => s.selectedTileId);
+  const selectedTiles = useDesignStore((s) => s.selectedTiles);
   const selectedLisbonId = useDesignStore((s) => s.selectedLisbonId);
 
   const setTemplate = useDesignStore((s) => s.setTemplate);
   const setSurface = useDesignStore((s) => s.setSurface);
   const setDimensions = useDesignStore((s) => s.setDimensions);
+  const setSurfaceTile = useDesignStore((s) => s.setSurfaceTile);
+  const clearSurfaceTile = useDesignStore((s) => s.clearSurfaceTile);
   const setPattern = useDesignStore((s) => s.setPattern);
   const setNatWidth = useDesignStore((s) => s.setNatWidth);
   const setNatColor = useDesignStore((s) => s.setNatColor);
 
-  const currentProduct = getProductById(selectedTileId);
+  const wallProduct = getProductById(selectedTiles.wall);
+  const floorProduct = getProductById(selectedTiles.floor);
   const currentLisbon = getTrimById(selectedLisbonId);
+  const style = getTemplateStyle(currentTemplateId);
+
+  const wasteFactor =
+    pattern === "herringbone" ? 0.12 : pattern === "diagonal" ? 0.1 : 0.05;
 
   const estimate = useMemo(() => {
-    if (!currentProduct || !dimensions.width_m || !dimensions.height_m) return null;
-    const style = getTemplateStyle(currentTemplateId);
-    const targetArea =
-      surface === "wall"
-        ? { width_m: dimensions.width_m, height_m: style.ceilingHeight_m }
-        : dimensions;
-    const perimeter_m =
-      surface === "wall"
-        ? 2 * (dimensions.width_m + style.ceilingHeight_m)
-        : 2 * (dimensions.width_m + dimensions.height_m);
-    const p = calculateStraightPattern({
-      area: targetArea,
-      tile: {
-        width_cm: currentProduct.size_cm.width,
-        height_cm: currentProduct.size_cm.height,
-      },
-      natWidth_mm,
-    });
-    const { dusNeeded, tilesWithWaste } = estimateNeeded({
-      totalTiles: p.totalFull,
-      piecesPerDus: currentProduct.pieces_per_dus,
-      wasteFactor: pattern === "herringbone" ? 0.12 : pattern === "diagonal" ? 0.1 : 0.05,
-    });
-    const tilePrice = dusNeeded * currentProduct.price_per_dus;
+    if (!dimensions.width_m || !dimensions.height_m) return null;
+
+    const patternCountFor = (product, targetArea) => {
+      if (!product || !targetArea.width_m || !targetArea.height_m) return 0;
+      const p = calculateStraightPattern({
+        area: targetArea,
+        tile: {
+          width_cm: product.size_cm.width,
+          height_cm: product.size_cm.height,
+        },
+        natWidth_mm,
+      });
+      return p.totalFull + p.totalPartial;
+    };
+
+    const wallEst = wallProduct
+      ? (() => {
+          const backCount = patternCountFor(wallProduct, {
+            width_m: dimensions.width_m,
+            height_m: style.ceilingHeight_m,
+          });
+          const sideCount = patternCountFor(wallProduct, {
+            width_m: dimensions.height_m,
+            height_m: style.ceilingHeight_m,
+          });
+          const totalTiles = backCount + 2 * sideCount;
+          const { dusNeeded, tilesWithWaste } = estimateNeeded({
+            totalTiles,
+            piecesPerDus: wallProduct.pieces_per_dus,
+            wasteFactor,
+          });
+          return {
+            product: wallProduct,
+            fullTiles: totalTiles,
+            tilesWithWaste,
+            dusNeeded,
+            price: dusNeeded * wallProduct.price_per_dus,
+          };
+        })()
+      : null;
+
+    const floorEst = floorProduct
+      ? (() => {
+          const count = patternCountFor(floorProduct, dimensions);
+          const { dusNeeded, tilesWithWaste } = estimateNeeded({
+            totalTiles: count,
+            piecesPerDus: floorProduct.pieces_per_dus,
+            wasteFactor,
+          });
+          return {
+            product: floorProduct,
+            fullTiles: count,
+            tilesWithWaste,
+            dusNeeded,
+            price: dusNeeded * floorProduct.price_per_dus,
+          };
+        })()
+      : null;
+
+    const perimeter_m = 2 * (dimensions.width_m + dimensions.height_m);
     const lisbonPrice = currentLisbon
       ? Math.round(perimeter_m * currentLisbon.price_per_meter)
       : 0;
+
+    const total =
+      (wallEst?.price ?? 0) + (floorEst?.price ?? 0) + lisbonPrice;
+
     return {
-      fullTiles: p.totalFull,
-      tilesWithWaste,
-      dusNeeded,
-      tilePrice,
+      wall: wallEst,
+      floor: floorEst,
       lisbonPrice,
-      totalPrice: tilePrice + lisbonPrice,
+      perimeter_m,
+      total,
     };
-  }, [currentProduct, currentLisbon, dimensions, natWidth_mm, pattern, surface, currentTemplateId]);
+  }, [wallProduct, floorProduct, currentLisbon, dimensions, natWidth_mm, wasteFactor, style]);
 
   return (
     <div className="card p-5 flex flex-col gap-6 sticky top-[80px]">
@@ -99,22 +145,29 @@ export default function ControlPanel({ room }) {
         </select>
       </ControlSection>
 
-      <ControlSection label="TARGET PERMUKAAN">
-        <div className="grid grid-cols-2 gap-2">
-          {["wall", "floor"].map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSurface(s)}
-              className={`py-2.5 rounded-lg border font-semibold text-sm transition ${
-                surface === s
-                  ? "bg-ink text-cream border-ink"
-                  : "bg-transparent text-ink-soft border-border hover:border-ink-soft"
-              }`}
-            >
-              {s === "wall" ? "Dinding" : "Lantai"}
-            </button>
-          ))}
+      <ControlSection label="TILE PER PERMUKAAN">
+        <p className="text-xs text-muted">
+          Drag tile dari katalog kiri ke slot bawah, atau klik tile setelah pilih target di bawah.
+        </p>
+        <div className="grid grid-cols-1 gap-2 mt-2">
+          <TileDropSlot
+            surfaceKey="wall"
+            label="Dinding"
+            product={wallProduct}
+            isActive={surface === "wall"}
+            onSelect={() => setSurface("wall")}
+            onDropTile={(id) => setSurfaceTile("wall", id)}
+            onClear={() => clearSurfaceTile("wall")}
+          />
+          <TileDropSlot
+            surfaceKey="floor"
+            label="Lantai"
+            product={floorProduct}
+            isActive={surface === "floor"}
+            onSelect={() => setSurface("floor")}
+            onDropTile={(id) => setSurfaceTile("floor", id)}
+            onClear={() => clearSurfaceTile("floor")}
+          />
         </div>
       </ControlSection>
 
@@ -195,25 +248,49 @@ export default function ControlPanel({ room }) {
       {estimate && (
         <ControlSection label="ESTIMASI KEBUTUHAN">
           <dl className="text-sm grid grid-cols-2 gap-x-3 gap-y-1">
-            <dt className="text-ink-soft">Tile ({estimate.fullTiles} pcs)</dt>
-            <dd className="text-right font-medium">+{estimate.tilesWithWaste} waste</dd>
-            <dt className="text-ink-soft">Dus</dt>
-            <dd className="text-right font-medium">{estimate.dusNeeded} dus</dd>
-            <dt className="text-ink-soft">Harga tile</dt>
-            <dd className="text-right font-medium">
-              Rp {currency.format(estimate.tilePrice)}
-            </dd>
+            {estimate.wall && (
+              <>
+                <dt className="text-ink-soft">Dinding · {estimate.wall.product.name}</dt>
+                <dd className="text-right font-medium">
+                  {estimate.wall.dusNeeded} dus
+                </dd>
+                <dt className="text-muted text-xs">
+                  ({estimate.wall.fullTiles} pcs + waste)
+                </dt>
+                <dd className="text-right text-xs">
+                  Rp {currency.format(estimate.wall.price)}
+                </dd>
+              </>
+            )}
+            {estimate.floor && (
+              <>
+                <dt className="text-ink-soft">Lantai · {estimate.floor.product.name}</dt>
+                <dd className="text-right font-medium">
+                  {estimate.floor.dusNeeded} dus
+                </dd>
+                <dt className="text-muted text-xs">
+                  ({estimate.floor.fullTiles} pcs + waste)
+                </dt>
+                <dd className="text-right text-xs">
+                  Rp {currency.format(estimate.floor.price)}
+                </dd>
+              </>
+            )}
             {estimate.lisbonPrice > 0 && (
               <>
-                <dt className="text-ink-soft">Lisbon</dt>
+                <dt className="text-ink-soft">
+                  Lisbon ({estimate.perimeter_m.toFixed(1)} m)
+                </dt>
                 <dd className="text-right font-medium">
                   Rp {currency.format(estimate.lisbonPrice)}
                 </dd>
               </>
             )}
-            <dt className="text-ink pt-2 font-bold">Total</dt>
-            <dd className="text-right pt-2 font-bold text-brand">
-              Rp {currency.format(estimate.totalPrice)}
+            <dt className="text-ink pt-2 font-bold border-t border-border/50 mt-1">
+              Total
+            </dt>
+            <dd className="text-right pt-2 font-bold text-brand border-t border-border/50 mt-1">
+              Rp {currency.format(estimate.total)}
             </dd>
           </dl>
         </ControlSection>
@@ -223,6 +300,73 @@ export default function ControlPanel({ room }) {
         Ekspor Spesifikasi
         <span aria-hidden="true">⬇</span>
       </button>
+    </div>
+  );
+}
+
+function TileDropSlot({ surfaceKey, label, product, isActive, onSelect, onDropTile, onClear }) {
+  const handleDragOver = (e) => {
+    if (e.dataTransfer.types.includes("application/x-tile-id")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("application/x-tile-id");
+    if (id) onDropTile(id);
+  };
+
+  return (
+    <div
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onClick={onSelect}
+      className={`p-3 rounded-lg border-2 transition cursor-pointer ${
+        isActive ? "border-brand bg-brand/5" : "border-dashed border-border"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        {product ? (
+          <div
+            className="w-12 h-12 rounded-md border border-border flex-shrink-0 overflow-hidden"
+            style={{
+              backgroundImage: `url(${product.thumbnail_url})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+            aria-hidden="true"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-md border border-dashed border-border flex items-center justify-center text-xl text-muted">
+            +
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs section-label">{label}</p>
+          <p className="text-sm font-semibold truncate">
+            {product ? product.name : "Kosong · drag/klik tile"}
+          </p>
+          {product && (
+            <p className="text-xs text-muted truncate">
+              {product.size_cm.width}×{product.size_cm.height} cm · {product.brand}
+            </p>
+          )}
+        </div>
+        {product && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear();
+            }}
+            aria-label={`Kosongkan ${label}`}
+            className="w-6 h-6 rounded-full bg-ink/10 hover:bg-ink/20 text-ink-soft text-xs font-bold flex items-center justify-center"
+          >
+            ×
+          </button>
+        )}
+      </div>
     </div>
   );
 }

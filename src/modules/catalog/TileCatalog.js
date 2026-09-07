@@ -14,10 +14,13 @@ const TABS = [
 export default function TileCatalog() {
   const catalogTab = useDesignStore((s) => s.catalogTab);
   const catalogQuery = useDesignStore((s) => s.catalogQuery);
-  const selectedTileId = useDesignStore((s) => s.selectedTileId);
+  const selectedTiles = useDesignStore((s) => s.selectedTiles);
+  const surface = useDesignStore((s) => s.surface);
   const setCatalogTab = useDesignStore((s) => s.setCatalogTab);
   const setCatalogQuery = useDesignStore((s) => s.setCatalogQuery);
-  const setSelectedTile = useDesignStore((s) => s.setSelectedTile);
+  const applyTileToCurrentSurface = useDesignStore(
+    (s) => s.applyTileToCurrentSurface,
+  );
 
   const products = useMemo(
     () =>
@@ -31,7 +34,12 @@ export default function TileCatalog() {
 
   return (
     <section className="card p-4 flex flex-col gap-3">
-      <h2 className="text-2xl font-bold">Tile Catalog</h2>
+      <div>
+        <h2 className="text-2xl font-bold">Tile Catalog</h2>
+        <p className="text-xs text-muted mt-0.5">
+          Klik untuk aplikasi ke {surface === "wall" ? "Dinding" : "Lantai"} · atau drag ke slot
+        </p>
+      </div>
 
       <div className="relative">
         <input
@@ -71,8 +79,9 @@ export default function TileCatalog() {
           <TileCard
             key={p.id}
             product={p}
-            active={p.id === selectedTileId}
-            onSelect={() => setSelectedTile(p.id)}
+            activeWall={p.id === selectedTiles.wall}
+            activeFloor={p.id === selectedTiles.floor}
+            onClick={() => applyTileToCurrentSurface(p.id)}
           />
         ))}
       </ul>
@@ -80,14 +89,22 @@ export default function TileCatalog() {
   );
 }
 
-function TileCard({ product, active, onSelect }) {
+function TileCard({ product, activeWall, activeFloor, onClick }) {
+  const anyActive = activeWall || activeFloor;
+
   return (
     <li>
       <button
         type="button"
-        onClick={onSelect}
-        className={`w-full flex items-center gap-3 p-2 rounded-lg border transition text-left ${
-          active
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = "copy";
+          e.dataTransfer.setData("application/x-tile-id", product.id);
+          e.dataTransfer.setData("text/plain", product.id);
+        }}
+        onClick={onClick}
+        className={`w-full flex items-center gap-3 p-2 rounded-lg border transition text-left cursor-grab active:cursor-grabbing ${
+          anyActive
             ? "border-ink bg-ink/5"
             : "border-border hover:border-ink-soft"
         }`}
@@ -106,16 +123,23 @@ function TileCard({ product, active, onSelect }) {
           <p className="text-xs text-muted truncate">
             {product.size_cm.width}×{product.size_cm.height} cm · {product.brand}
           </p>
+          {anyActive && (
+            <div className="flex gap-1 mt-1">
+              {activeWall && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand text-cream font-semibold">
+                  Dinding
+                </span>
+              )}
+              {activeFloor && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand text-cream font-semibold">
+                  Lantai
+                </span>
+              )}
+            </div>
+          )}
         </div>
-        <span
-          className={`w-6 h-6 rounded-full border flex items-center justify-center text-sm flex-shrink-0 ${
-            active
-              ? "bg-ink text-cream border-ink"
-              : "border-border text-muted"
-          }`}
-          aria-hidden="true"
-        >
-          {active ? "✓" : "+"}
+        <span className="text-lg text-muted flex-shrink-0" aria-hidden="true">
+          ⋮⋮
         </span>
       </button>
     </li>

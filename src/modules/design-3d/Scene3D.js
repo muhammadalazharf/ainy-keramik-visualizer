@@ -10,8 +10,8 @@ import { calculateStraightPattern } from "@/lib/math/tile-pattern";
 import { makeProceduralTileTexture } from "@/lib/textures/proceduralTile";
 import { getTemplateStyle } from "@/lib/data/room-styles";
 
-const TILE_DEPTH_M = 0.006;
-const NAT_DEPTH_M = 0.004;
+const NAT_BACKDROP_OFFSET = 0.0005;
+const TILE_FRONT_OFFSET = 0.002;
 
 const TAG_COLOR = {
   cream: "#f5e8d0",
@@ -80,71 +80,114 @@ function useTileTexture(product, fallbackColor) {
   return realTex ?? proceduralTex;
 }
 
-function TiledSurface({ orientation, width, height, pattern, tileTexture, natColorHex }) {
-  const tiles = pattern.tiles;
-  const tilesGeometry = useMemo(() => {
-    return tiles.map((t) => ({
-      x_m: (t.x_mm + t.width_mm / 2) / 1000,
-      y_m: (t.y_mm + t.height_mm / 2) / 1000,
-      w_m: t.width_mm / 1000,
-      h_m: t.height_mm / 1000,
-    }));
-  }, [tiles]);
+function TileMesh({ x, y, w, h, uvW, uvH, texture, isFloor }) {
+  const geometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(w, h);
+    if (uvW !== 1 || uvH !== 1) {
+      const uvAttr = geo.attributes.uv;
+      for (let i = 0; i < uvAttr.count; i++) {
+        const u = uvAttr.getX(i);
+        const v = uvAttr.getY(i);
+        uvAttr.setXY(i, u * uvW, v * uvH);
+      }
+      uvAttr.needsUpdate = true;
+    }
+    return geo;
+  }, [w, h, uvW, uvH]);
+
+  if (isFloor) {
+    return (
+      <mesh
+        geometry={geometry}
+        position={[x, TILE_FRONT_OFFSET, y]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <meshStandardMaterial
+          map={texture}
+          color="#ffffff"
+          roughness={0.35}
+          metalness={0.05}
+        />
+      </mesh>
+    );
+  }
 
   return (
-    <group>
-      {orientation === "floor" ? (
-        <>
-          <mesh position={[width / 2, NAT_DEPTH_M / 2, height / 2]} receiveShadow>
-            <boxGeometry args={[width, NAT_DEPTH_M, height]} />
-            <meshStandardMaterial color={natColorHex} roughness={0.9} />
-          </mesh>
-          {tilesGeometry.map((t, i) => (
-            <mesh
-              key={i}
-              position={[t.x_m, NAT_DEPTH_M + TILE_DEPTH_M / 2, t.y_m]}
-              castShadow
-              receiveShadow
-            >
-              <boxGeometry args={[t.w_m, TILE_DEPTH_M, t.h_m]} />
-              <meshStandardMaterial
-                map={tileTexture}
-                color="#ffffff"
-                roughness={0.35}
-                metalness={0.05}
-              />
-            </mesh>
-          ))}
-        </>
-      ) : (
-        <>
-          <mesh position={[width / 2, height / 2, NAT_DEPTH_M / 2]} receiveShadow>
-            <boxGeometry args={[width, height, NAT_DEPTH_M]} />
-            <meshStandardMaterial color={natColorHex} roughness={0.9} />
-          </mesh>
-          {tilesGeometry.map((t, i) => (
-            <mesh
-              key={i}
-              position={[t.x_m, t.y_m, NAT_DEPTH_M + TILE_DEPTH_M / 2]}
-              castShadow
-              receiveShadow
-            >
-              <boxGeometry args={[t.w_m, t.h_m, TILE_DEPTH_M]} />
-              <meshStandardMaterial
-                map={tileTexture}
-                color="#ffffff"
-                roughness={0.35}
-                metalness={0.05}
-              />
-            </mesh>
-          ))}
-        </>
-      )}
+    <mesh
+      geometry={geometry}
+      position={[x, y, TILE_FRONT_OFFSET]}
+      receiveShadow
+    >
+      <meshStandardMaterial
+        map={texture}
+        color="#ffffff"
+        roughness={0.35}
+        metalness={0.05}
+      />
+    </mesh>
+  );
+}
+
+function FloorTileSurface({ width, depth, pattern, texture, natColorHex }) {
+  return (
+    <group position={[-width / 2, 0, -depth / 2]}>
+      <mesh position={[width / 2, NAT_BACKDROP_OFFSET, depth / 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[width, depth]} />
+        <meshStandardMaterial color={natColorHex} roughness={0.9} />
+      </mesh>
+      {pattern.tiles.map((t, i) => (
+        <TileMesh
+          key={i}
+          x={(t.x_mm + t.width_mm / 2) / 1000}
+          y={(t.y_mm + t.height_mm / 2) / 1000}
+          w={t.width_mm / 1000}
+          h={t.height_mm / 1000}
+          uvW={t.uv_w}
+          uvH={t.uv_h}
+          texture={texture}
+          isFloor
+        />
+      ))}
     </group>
   );
 }
 
-function RoomShell({ width, depth, ceiling, style, surface, tilePattern, tileTexture, natColorHex }) {
+function WallTileSurface({ width, height, pattern, texture, natColorHex }) {
+  return (
+    <group>
+      <mesh position={[width / 2, height / 2, NAT_BACKDROP_OFFSET]} receiveShadow>
+        <planeGeometry args={[width, height]} />
+        <meshStandardMaterial color={natColorHex} roughness={0.9} />
+      </mesh>
+      {pattern.tiles.map((t, i) => (
+        <TileMesh
+          key={i}
+          x={(t.x_mm + t.width_mm / 2) / 1000}
+          y={(t.y_mm + t.height_mm / 2) / 1000}
+          w={t.width_mm / 1000}
+          h={t.height_mm / 1000}
+          uvW={t.uv_w}
+          uvH={t.uv_h}
+          texture={texture}
+        />
+      ))}
+    </group>
+  );
+}
+
+function RoomShell({
+  width,
+  depth,
+  ceiling,
+  style,
+  wallPatternBack,
+  wallPatternSide,
+  wallTexture,
+  floorPattern,
+  floorTexture,
+  natColorHex,
+}) {
   const wallMaterial = (
     <meshStandardMaterial color={style.wallColor} roughness={style.roughness} />
   );
@@ -155,23 +198,16 @@ function RoomShell({ width, depth, ceiling, style, surface, tilePattern, tileTex
     <meshStandardMaterial color={style.accentColor} roughness={0.85} />
   );
 
-  const showTileOnFloor = surface === "floor" && tilePattern;
-  const showTileOnWall = surface === "wall" && tilePattern;
-
   return (
     <group>
-      {/* Floor (plain if tile is on wall; tiled if tile is on floor) */}
-      {showTileOnFloor ? (
-        <group position={[-width / 2, 0, -depth / 2]}>
-          <TiledSurface
-            orientation="floor"
-            width={width}
-            height={depth}
-            pattern={tilePattern}
-            tileTexture={tileTexture}
-            natColorHex={natColorHex}
-          />
-        </group>
+      {floorPattern ? (
+        <FloorTileSurface
+          width={width}
+          depth={depth}
+          pattern={floorPattern}
+          texture={floorTexture}
+          natColorHex={natColorHex}
+        />
       ) : (
         <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[width, depth]} />
@@ -179,15 +215,13 @@ function RoomShell({ width, depth, ceiling, style, surface, tilePattern, tileTex
         </mesh>
       )}
 
-      {/* Back Wall (tile target when surface === "wall") */}
-      {showTileOnWall ? (
+      {wallPatternBack ? (
         <group position={[-width / 2, 0, -depth / 2]}>
-          <TiledSurface
-            orientation="wall"
+          <WallTileSurface
             width={width}
             height={ceiling}
-            pattern={tilePattern}
-            tileTexture={tileTexture}
+            pattern={wallPatternBack}
+            texture={wallTexture}
             natColorHex={natColorHex}
           />
         </group>
@@ -198,27 +232,54 @@ function RoomShell({ width, depth, ceiling, style, surface, tilePattern, tileTex
         </mesh>
       )}
 
-      {/* Left Wall */}
-      <mesh
-        position={[-width / 2, ceiling / 2, 0]}
-        rotation={[0, Math.PI / 2, 0]}
-        receiveShadow
-      >
-        <planeGeometry args={[depth, ceiling]} />
-        {wallMaterial}
-      </mesh>
+      {wallPatternSide ? (
+        <group
+          position={[-width / 2, 0, depth / 2]}
+          rotation={[0, Math.PI / 2, 0]}
+        >
+          <WallTileSurface
+            width={depth}
+            height={ceiling}
+            pattern={wallPatternSide}
+            texture={wallTexture}
+            natColorHex={natColorHex}
+          />
+        </group>
+      ) : (
+        <mesh
+          position={[-width / 2, ceiling / 2, 0]}
+          rotation={[0, Math.PI / 2, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[depth, ceiling]} />
+          {wallMaterial}
+        </mesh>
+      )}
 
-      {/* Right Wall */}
-      <mesh
-        position={[width / 2, ceiling / 2, 0]}
-        rotation={[0, -Math.PI / 2, 0]}
-        receiveShadow
-      >
-        <planeGeometry args={[depth, ceiling]} />
-        {wallMaterial}
-      </mesh>
+      {wallPatternSide ? (
+        <group
+          position={[width / 2, 0, -depth / 2]}
+          rotation={[0, -Math.PI / 2, 0]}
+        >
+          <WallTileSurface
+            width={depth}
+            height={ceiling}
+            pattern={wallPatternSide}
+            texture={wallTexture}
+            natColorHex={natColorHex}
+          />
+        </group>
+      ) : (
+        <mesh
+          position={[width / 2, ceiling / 2, 0]}
+          rotation={[0, -Math.PI / 2, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[depth, ceiling]} />
+          {wallMaterial}
+        </mesh>
+      )}
 
-      {/* Ceiling */}
       <mesh position={[0, ceiling, 0]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[width, depth]} />
         {ceilingMaterial}
@@ -228,41 +289,61 @@ function RoomShell({ width, depth, ceiling, style, surface, tilePattern, tileTex
 }
 
 export default function Scene3D() {
-  const surface = useDesignStore((s) => s.surface);
   const dimensions = useDesignStore((s) => s.dimensions);
-  const selectedTileId = useDesignStore((s) => s.selectedTileId);
+  const selectedTiles = useDesignStore((s) => s.selectedTiles);
   const natWidth_mm = useDesignStore((s) => s.natWidth_mm);
   const natColor = useDesignStore((s) => s.natColor);
   const currentTemplateId = useDesignStore((s) => s.currentTemplateId);
 
-  const product = getProductById(selectedTileId);
+  const wallProduct = getProductById(selectedTiles.wall);
+  const floorProduct = getProductById(selectedTiles.floor);
   const style = getTemplateStyle(currentTemplateId);
-  const tileColor = tileFillFromProduct(product);
-  const tileTexture = useTileTexture(product, tileColor);
   const natColorHex = getNatHexById(natColor);
+
+  const wallColor = tileFillFromProduct(wallProduct);
+  const floorColor = tileFillFromProduct(floorProduct);
+  const wallTexture = useTileTexture(wallProduct, wallColor);
+  const floorTexture = useTileTexture(floorProduct, floorColor);
 
   const width_m = dimensions.width_m || 3;
   const depth_m = dimensions.height_m || 3;
   const ceiling_m = style.ceilingHeight_m;
 
-  const targetPatternArea = useMemo(() => {
-    if (surface === "wall") {
-      return { width_m, height_m: ceiling_m };
-    }
-    return { width_m, height_m: depth_m };
-  }, [surface, width_m, depth_m, ceiling_m]);
-
-  const pattern = useMemo(() => {
-    if (!product || !targetPatternArea.width_m || !targetPatternArea.height_m) return null;
+  const wallPatternBack = useMemo(() => {
+    if (!wallProduct) return null;
     return calculateStraightPattern({
-      area: targetPatternArea,
+      area: { width_m, height_m: ceiling_m },
       tile: {
-        width_cm: product.size_cm.width,
-        height_cm: product.size_cm.height,
+        width_cm: wallProduct.size_cm.width,
+        height_cm: wallProduct.size_cm.height,
       },
       natWidth_mm,
     });
-  }, [product, targetPatternArea, natWidth_mm]);
+  }, [wallProduct, width_m, ceiling_m, natWidth_mm]);
+
+  const wallPatternSide = useMemo(() => {
+    if (!wallProduct) return null;
+    return calculateStraightPattern({
+      area: { width_m: depth_m, height_m: ceiling_m },
+      tile: {
+        width_cm: wallProduct.size_cm.width,
+        height_cm: wallProduct.size_cm.height,
+      },
+      natWidth_mm,
+    });
+  }, [wallProduct, depth_m, ceiling_m, natWidth_mm]);
+
+  const floorPattern = useMemo(() => {
+    if (!floorProduct) return null;
+    return calculateStraightPattern({
+      area: { width_m, height_m: depth_m },
+      tile: {
+        width_cm: floorProduct.size_cm.width,
+        height_cm: floorProduct.size_cm.height,
+      },
+      natWidth_mm,
+    });
+  }, [floorProduct, width_m, depth_m, natWidth_mm]);
 
   const camDist = Math.max(width_m, depth_m) * 0.75;
   const cameraPos = [width_m * 0.4, ceiling_m * 0.65, depth_m / 2 + camDist];
@@ -300,9 +381,11 @@ export default function Scene3D() {
             depth={depth_m}
             ceiling={ceiling_m}
             style={style}
-            surface={surface}
-            tilePattern={pattern}
-            tileTexture={tileTexture}
+            wallPatternBack={wallPatternBack}
+            wallPatternSide={wallPatternSide}
+            wallTexture={wallTexture}
+            floorPattern={floorPattern}
+            floorTexture={floorTexture}
             natColorHex={natColorHex}
           />
 

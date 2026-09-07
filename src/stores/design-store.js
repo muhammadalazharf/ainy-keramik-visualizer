@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-const DEFAULT_TILE_ID = "travertine-stone-60x60";
+const DEFAULT_FLOOR_TILE = "travertine-stone-60x60";
 
 const initialState = {
   currentRoomId: null,
@@ -8,7 +8,10 @@ const initialState = {
   surface: "wall",
   dimensions: { width_m: null, height_m: null },
 
-  selectedTileId: DEFAULT_TILE_ID,
+  selectedTiles: {
+    wall: null,
+    floor: DEFAULT_FLOOR_TILE,
+  },
   selectedLisbonId: null,
 
   pattern: "straight",
@@ -41,7 +44,30 @@ export const useDesignStore = create((set) => ({
       },
     }),
 
-  setSelectedTile: (id) => set({ selectedTileId: id }),
+  setSurfaceTile: (surfaceKey, tileId) =>
+    set((state) => ({
+      selectedTiles: {
+        ...state.selectedTiles,
+        [surfaceKey]: tileId,
+      },
+    })),
+
+  applyTileToCurrentSurface: (tileId) =>
+    set((state) => ({
+      selectedTiles: {
+        ...state.selectedTiles,
+        [state.surface]: tileId,
+      },
+    })),
+
+  clearSurfaceTile: (surfaceKey) =>
+    set((state) => ({
+      selectedTiles: {
+        ...state.selectedTiles,
+        [surfaceKey]: null,
+      },
+    })),
+
   setSelectedLisbon: (id) => set({ selectedLisbonId: id }),
 
   setPattern: (pattern) => set({ pattern }),
