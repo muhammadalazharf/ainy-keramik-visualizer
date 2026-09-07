@@ -6,6 +6,7 @@ import { getAllTemplates } from "@/lib/data/rooms";
 import { getAllNatColors, getProductById } from "@/lib/data/products";
 import { getTrimById } from "@/lib/data/trims";
 import { calculateStraightPattern, estimateNeeded } from "@/lib/math/tile-pattern";
+import { getTemplateStyle } from "@/lib/data/room-styles";
 
 const PATTERNS = [
   { id: "straight",    label: "Straight (Lurus)" },
@@ -41,8 +42,17 @@ export default function ControlPanel({ room }) {
 
   const estimate = useMemo(() => {
     if (!currentProduct || !dimensions.width_m || !dimensions.height_m) return null;
+    const style = getTemplateStyle(currentTemplateId);
+    const targetArea =
+      surface === "wall"
+        ? { width_m: dimensions.width_m, height_m: style.ceilingHeight_m }
+        : dimensions;
+    const perimeter_m =
+      surface === "wall"
+        ? 2 * (dimensions.width_m + style.ceilingHeight_m)
+        : 2 * (dimensions.width_m + dimensions.height_m);
     const p = calculateStraightPattern({
-      area: dimensions,
+      area: targetArea,
       tile: {
         width_cm: currentProduct.size_cm.width,
         height_cm: currentProduct.size_cm.height,
@@ -56,7 +66,7 @@ export default function ControlPanel({ room }) {
     });
     const tilePrice = dusNeeded * currentProduct.price_per_dus;
     const lisbonPrice = currentLisbon
-      ? Math.round(2 * (dimensions.width_m + dimensions.height_m) * currentLisbon.price_per_meter)
+      ? Math.round(perimeter_m * currentLisbon.price_per_meter)
       : 0;
     return {
       fullTiles: p.totalFull,
@@ -66,7 +76,7 @@ export default function ControlPanel({ room }) {
       lisbonPrice,
       totalPrice: tilePrice + lisbonPrice,
     };
-  }, [currentProduct, currentLisbon, dimensions, natWidth_mm, pattern]);
+  }, [currentProduct, currentLisbon, dimensions, natWidth_mm, pattern, surface, currentTemplateId]);
 
   return (
     <div className="card p-5 flex flex-col gap-6 sticky top-[80px]">
@@ -108,7 +118,7 @@ export default function ControlPanel({ room }) {
         </div>
       </ControlSection>
 
-      <ControlSection label="UKURAN AREA (m)">
+      <ControlSection label="UKURAN RUANGAN (m)">
         <div className="grid grid-cols-2 gap-2">
           <NumberInput
             label="Lebar"
@@ -116,11 +126,14 @@ export default function ControlPanel({ room }) {
             onChange={(v) => setDimensions(v, dimensions.height_m ?? 0)}
           />
           <NumberInput
-            label="Tinggi"
+            label="Panjang"
             value={dimensions.height_m ?? ""}
             onChange={(v) => setDimensions(dimensions.width_m ?? 0, v)}
           />
         </div>
+        <p className="text-xs text-muted">
+          Tinggi langit-langit otomatis dari template.
+        </p>
       </ControlSection>
 
       <ControlSection label="POLA SUSUNAN">
