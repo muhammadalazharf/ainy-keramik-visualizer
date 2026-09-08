@@ -2,16 +2,48 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { useDesignStore } from "@/stores/design-store";
 import { getProductById, getNatHexById } from "@/lib/data/products";
 import { calculateStraightPattern } from "@/lib/math/tile-pattern";
 import { makeProceduralTileTexture } from "@/lib/textures/proceduralTile";
 import { getTemplateStyle } from "@/lib/data/room-styles";
+import {
+  SURFACE_ID,
+  makeSurfaceUserData,
+  collectSurfaceObjects,
+  validateSurfaceCoverage,
+} from "@/modules/engine-3d/SurfaceRegistry";
 
 const NAT_BACKDROP_OFFSET = 0.0005;
 const TILE_FRONT_OFFSET = 0.002;
+
+/**
+ * Dev-only bridge that publishes the current three.js scene root to
+ * `window.__ainy3D` so tests (browser JS console / MCP javascript_tool) can
+ * traverse the scene graph and verify surface registration.
+ *
+ * Removed automatically in production builds by dead-code elimination since
+ * `process.env.NODE_ENV !== "development"` short-circuits the useEffect body.
+ */
+function DevSceneBridge() {
+  const { scene } = useThree();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.__ainy3D = {
+      scene,
+      collectSurfaceObjects: () => collectSurfaceObjects(scene),
+      validate: (expectedIds) => validateSurfaceCoverage(scene, expectedIds),
+    };
+    return () => {
+      if (window.__ainy3D?.scene === scene) {
+        delete window.__ainy3D;
+      }
+    };
+  }, [scene]);
+  return null;
+}
 
 const TAG_COLOR = {
   cream: "#f5e8d0",
@@ -80,7 +112,7 @@ function useTileTexture(product, fallbackColor) {
   return realTex ?? proceduralTex;
 }
 
-function TileMesh({ x, y, w, h, uvW, uvH, texture, isFloor }) {
+function TileMesh({ x, y, w, h, uvW, uvH, texture, isFloor, surfaceId }) {
   const geometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(w, h);
     if (uvW !== 1 || uvH !== 1) {
@@ -95,6 +127,11 @@ function TileMesh({ x, y, w, h, uvW, uvH, texture, isFloor }) {
     return geo;
   }, [w, h, uvW, uvH]);
 
+  const userData = useMemo(
+    () => (surfaceId ? makeSurfaceUserData(surfaceId, "tile") : undefined),
+    [surfaceId],
+  );
+
   if (isFloor) {
     return (
       <mesh
@@ -102,6 +139,8 @@ function TileMesh({ x, y, w, h, uvW, uvH, texture, isFloor }) {
         position={[x, TILE_FRONT_OFFSET, y]}
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
+        userData={userData}
+        name={surfaceId ? `${surfaceId}__tile` : undefined}
       >
         <meshStandardMaterial
           map={texture}
@@ -118,6 +157,8 @@ function TileMesh({ x, y, w, h, uvW, uvH, texture, isFloor }) {
       geometry={geometry}
       position={[x, y, TILE_FRONT_OFFSET]}
       receiveShadow
+      userData={userData}
+      name={surfaceId ? `${surfaceId}__tile` : undefined}
     >
       <meshStandardMaterial
         map={texture}
@@ -129,10 +170,21 @@ function TileMesh({ x, y, w, h, uvW, uvH, texture, isFloor }) {
   );
 }
 
-function FloorTileSurface({ width, depth, pattern, texture, natColorHex }) {
+function FloorTileSurface({ width, depth, pattern, texture, natColorHex, surfaceId }) {
+  const backdropUserData = useMemo(
+    () => (surfaceId ? makeSurfaceUserData(surfaceId, "backdrop") : undefined),
+    [surfaceId],
+  );
+
   return (
-    <group position={[-width / 2, 0, -depth / 2]}>
-      <mesh position={[width / 2, NAT_BACKDROP_OFFSET, depth / 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+    <group position={[-width / 2, 0, -depth / 2]} name={surfaceId ? `${surfaceId}__group` : undefined}>
+      <mesh
+        position={[width / 2, NAT_BACKDROP_OFFSET, depth / 2]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        userData={backdropUserData}
+        name={surfaceId ? `${surfaceId}__backdrop` : undefined}
+      >
         <planeGeometry args={[width, depth]} />
         <meshStandardMaterial color={natColorHex} roughness={0.9} />
       </mesh>
@@ -147,16 +199,27 @@ function FloorTileSurface({ width, depth, pattern, texture, natColorHex }) {
           uvH={t.uv_h}
           texture={texture}
           isFloor
+          surfaceId={surfaceId}
         />
       ))}
     </group>
   );
 }
 
-function WallTileSurface({ width, height, pattern, texture, natColorHex }) {
+function WallTileSurface({ width, height, pattern, texture, natColorHex, surfaceId }) {
+  const backdropUserData = useMemo(
+    () => (surfaceId ? makeSurfaceUserData(surfaceId, "backdrop") : undefined),
+    [surfaceId],
+  );
+
   return (
-    <group>
-      <mesh position={[width / 2, height / 2, NAT_BACKDROP_OFFSET]} receiveShadow>
+    <group name={surfaceId ? `${surfaceId}__group` : undefined}>
+      <mesh
+        position={[width / 2, height / 2, NAT_BACKDROP_OFFSET]}
+        receiveShadow
+        userData={backdropUserData}
+        name={surfaceId ? `${surfaceId}__backdrop` : undefined}
+      >
         <planeGeometry args={[width, height]} />
         <meshStandardMaterial color={natColorHex} roughness={0.9} />
       </mesh>
@@ -170,6 +233,7 @@ function WallTileSurface({ width, height, pattern, texture, natColorHex }) {
           uvW={t.uv_w}
           uvH={t.uv_h}
           texture={texture}
+          surfaceId={surfaceId}
         />
       ))}
     </group>
@@ -207,26 +271,42 @@ function RoomShell({
           pattern={floorPattern}
           texture={floorTexture}
           natColorHex={natColorHex}
+          surfaceId={SURFACE_ID.FLOOR}
         />
       ) : (
-        <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <mesh
+          position={[0, -0.01, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+          userData={makeSurfaceUserData(SURFACE_ID.FLOOR, "backdrop")}
+          name={`${SURFACE_ID.FLOOR}__backdrop`}
+        >
           <planeGeometry args={[width, depth]} />
           {floorMaterial}
         </mesh>
       )}
 
       {wallPatternBack ? (
-        <group position={[-width / 2, 0, -depth / 2]}>
+        <group
+          position={[-width / 2, 0, -depth / 2]}
+          name={`${SURFACE_ID.WALL_BACK}__anchor`}
+        >
           <WallTileSurface
             width={width}
             height={ceiling}
             pattern={wallPatternBack}
             texture={wallTexture}
             natColorHex={natColorHex}
+            surfaceId={SURFACE_ID.WALL_BACK}
           />
         </group>
       ) : (
-        <mesh position={[0, ceiling / 2, -depth / 2]} receiveShadow>
+        <mesh
+          position={[0, ceiling / 2, -depth / 2]}
+          receiveShadow
+          userData={makeSurfaceUserData(SURFACE_ID.WALL_BACK, "backdrop")}
+          name={`${SURFACE_ID.WALL_BACK}__backdrop`}
+        >
           <planeGeometry args={[width, ceiling]} />
           {wallMaterial}
         </mesh>
@@ -236,6 +316,7 @@ function RoomShell({
         <group
           position={[-width / 2, 0, depth / 2]}
           rotation={[0, Math.PI / 2, 0]}
+          name={`${SURFACE_ID.WALL_LEFT}__anchor`}
         >
           <WallTileSurface
             width={depth}
@@ -243,6 +324,7 @@ function RoomShell({
             pattern={wallPatternSide}
             texture={wallTexture}
             natColorHex={natColorHex}
+            surfaceId={SURFACE_ID.WALL_LEFT}
           />
         </group>
       ) : (
@@ -250,6 +332,8 @@ function RoomShell({
           position={[-width / 2, ceiling / 2, 0]}
           rotation={[0, Math.PI / 2, 0]}
           receiveShadow
+          userData={makeSurfaceUserData(SURFACE_ID.WALL_LEFT, "backdrop")}
+          name={`${SURFACE_ID.WALL_LEFT}__backdrop`}
         >
           <planeGeometry args={[depth, ceiling]} />
           {wallMaterial}
@@ -260,6 +344,7 @@ function RoomShell({
         <group
           position={[width / 2, 0, -depth / 2]}
           rotation={[0, -Math.PI / 2, 0]}
+          name={`${SURFACE_ID.WALL_RIGHT}__anchor`}
         >
           <WallTileSurface
             width={depth}
@@ -267,6 +352,7 @@ function RoomShell({
             pattern={wallPatternSide}
             texture={wallTexture}
             natColorHex={natColorHex}
+            surfaceId={SURFACE_ID.WALL_RIGHT}
           />
         </group>
       ) : (
@@ -274,13 +360,21 @@ function RoomShell({
           position={[width / 2, ceiling / 2, 0]}
           rotation={[0, -Math.PI / 2, 0]}
           receiveShadow
+          userData={makeSurfaceUserData(SURFACE_ID.WALL_RIGHT, "backdrop")}
+          name={`${SURFACE_ID.WALL_RIGHT}__backdrop`}
         >
           <planeGeometry args={[depth, ceiling]} />
           {wallMaterial}
         </mesh>
       )}
 
-      <mesh position={[0, ceiling, 0]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh
+        position={[0, ceiling, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
+        receiveShadow
+        userData={makeSurfaceUserData(SURFACE_ID.CEILING, "backdrop")}
+        name={`${SURFACE_ID.CEILING}__backdrop`}
+      >
         <planeGeometry args={[width, depth]} />
         {ceilingMaterial}
       </mesh>
@@ -358,6 +452,7 @@ export default function Scene3D() {
       >
         <Suspense fallback={null}>
           <color attach="background" args={["#111827"]} />
+          <DevSceneBridge />
 
           <ambientLight intensity={style.ambientIntensity} />
           <directionalLight
