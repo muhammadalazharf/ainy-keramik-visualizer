@@ -8,6 +8,7 @@ import TileCatalog from "@/modules/catalog/TileCatalog";
 import LisbonCatalog from "@/modules/catalog/LisbonCatalog";
 import ControlPanel from "@/modules/controls/ControlPanel";
 import { useDesignStore } from "@/stores/design-store";
+import SceneStoreBridge from "@/stores/SceneStoreBridge";
 
 const Scene3D = dynamic(
   () => import("@/modules/design-3d/Scene3D"),
@@ -36,6 +37,7 @@ export default function RoomVisualizer({ room }) {
 
   return (
     <main className="min-h-screen bg-cream text-ink flex flex-col">
+      <SceneStoreBridge />
       <header className="px-4 sm:px-6 py-4 flex items-center justify-between border-b border-border bg-cream/95 backdrop-blur sticky top-0 z-20">
         <BrandBadge />
         <Link href="/dashboard" className="text-sm text-ink-soft hover:text-ink transition">
